@@ -5,7 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class PoolingController {
-     @GetMapping("/public/test")
+
+    @GetMapping("/public/test")
     public String publicEndpoint() {
         return "This is a public endpoint.";
     }
