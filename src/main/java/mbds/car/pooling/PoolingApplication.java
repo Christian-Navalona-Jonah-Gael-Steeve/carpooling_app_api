@@ -1,17 +1,20 @@
 package mbds.car.pooling;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Bean;
+
+import com.google.firebase.FirebaseApp;
 
 @SpringBootApplication
-@ComponentScan(
-    basePackages = {"mbds.car.pooling.firebase", "mbds.car.pooling"},
-    excludeFilters = @Filter(type = FilterType.REGEX, pattern = "mbds\\.car\\.pooling\\.config\\..*")
-)
 public class PoolingApplication {
+
+    @Bean
+    public CommandLineRunner testFirebaseApp(FirebaseApp firebaseApp) {
+        return args -> System.out.println("🔔 Bean FirebaseApp détecté: " + firebaseApp.getName());
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(PoolingApplication.class, args);
     }
