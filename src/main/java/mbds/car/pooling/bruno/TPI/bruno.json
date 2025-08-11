@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "TPI",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
