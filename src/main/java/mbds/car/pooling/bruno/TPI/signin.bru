@@ -1,23 +1,19 @@
 meta {
   name: signin
   type: http
-  seq: 1
+  seq: 3
 }
 
 post {
-  url: http://localhost:8080/api/auth/signup
+  url: http://localhost:8080/api/auth/signin
   body: json
   auth: inherit
 }
 
 body:json {
   {
-      "email": "jonahrafit@gmail.com.com",
-      "password": "123456",
-      "displayName": "Jonah Fitia",
-      "photoUrl": "https://images.pexels.com/photos/697509/pexels-photo-697509.jpeg",
-      "phoneNumber": "+261346420506",
-      "disabled": false
+      "email": "jonahrafit@gmail.com",
+      "password": "123456"
   }
   
 }

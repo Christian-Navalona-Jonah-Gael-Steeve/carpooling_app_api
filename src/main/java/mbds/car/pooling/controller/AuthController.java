@@ -7,6 +7,7 @@ import mbds.car.pooling.service.AuthService;
 import mbds.car.pooling.models.AuthResponse;
 import mbds.car.pooling.models.SigninRequest;
 import mbds.car.pooling.models.SignupRequest;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,5 +33,10 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).body("Invalid credentials");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getUserInfo(Authentication auth) {
+        return ResponseEntity.ok("Vous êtes connecté avec UID: " + auth.getName());
     }
 }
