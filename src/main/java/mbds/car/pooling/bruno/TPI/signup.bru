@@ -1,0 +1,23 @@
+meta {
+  name: signup
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/auth/signup
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "email": "jonahrafit@gmail.com",
+      "password": "123456",
+      "displayName": "Jonah Fitia",
+      "photoUrl": "https://images.pexels.com/photos/697509/pexels-photo-697509.jpeg",
+      "phoneNumber": "+261346420506",
+      "disabled": false
+  }
+  
+}
