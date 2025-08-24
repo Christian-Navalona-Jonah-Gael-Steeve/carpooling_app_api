@@ -10,8 +10,10 @@ import lombok.NoArgsConstructor;
 public class SignupRequest {
     private String email;       // obligatoire
     private String password;    // obligatoire
-    private String displayName; // recommandé
-    private String photoUrl;    // optionnel
+    private String firstName;   // obligatoire
+    private String lastName;    // obligatoire
     private String phoneNumber; // optionnel
+    private String cinNumber;   // optionnel
+    private String photoUrl;    // optionnel
     private boolean disabled = false; // optionnel, par défaut false
 }

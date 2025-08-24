@@ -9,7 +9,8 @@ public class AuthResponse {
     private Long expiresIn;
     private String uid;
     private String email;
-    private String displayName;
-    private String photoUrl;
+    private String firstName;
+    private String lastName;
     private String phoneNumber;
+    private String cinNumber;
 }

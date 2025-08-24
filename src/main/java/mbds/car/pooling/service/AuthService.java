@@ -3,9 +3,12 @@ package mbds.car.pooling.service;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
+
+import mbds.car.pooling.repository.UserRepository;
 import mbds.car.pooling.models.AuthResponse;
 import mbds.car.pooling.models.SigninRequest;
 import mbds.car.pooling.models.SignupRequest;
+import mbds.car.pooling.models.User;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -20,31 +24,39 @@ public class AuthService {
     @Value("${firebase.api-key}")
     private String firebaseApiKey;
 
-    private FirebaseApp firebaseApp;
+    private final FirebaseApp firebaseApp;
+    private final UserRepository userRepository;
 
-    public AuthService(FirebaseApp fire_app ) {
+    public AuthService(FirebaseApp fire_app, UserRepository userRepository) {
         this.firebaseApp = fire_app;
+        this.userRepository = userRepository;
     }
 
-    public AuthResponse signup(SignupRequest request) throws Exception {
-        UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
+    public AuthResponse signup(SignupRequest request)
+            throws Exception {
+        // 🔹 Création sur Firebase (uniquement champs Firebase)
+        UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
                 .setEmail(request.getEmail())
-                .setPassword(request.getPassword());
+                .setPassword(request.getPassword())
+                .setDisplayName(request.getFirstName() + " " + request.getLastName())
+                .setPhotoUrl(request.getPhotoUrl())
+                .setPhoneNumber(request.getPhoneNumber())
+                .setDisabled(request.isDisabled());
 
-        if (request.getDisplayName() != null && !request.getDisplayName().isEmpty()) {
-            createRequest.setDisplayName(request.getDisplayName());
-        }
-        if (request.getPhotoUrl() != null && !request.getPhotoUrl().isEmpty()) {
-            createRequest.setPhotoUrl(request.getPhotoUrl());
-        }
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
-            createRequest.setPhoneNumber(request.getPhoneNumber());
-        }
-        createRequest.setDisabled(request.isDisabled());
+        // 🔹 Création de l’utilisateur sur Firebase
+        UserRecord userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
 
-        UserRecord userRecord = FirebaseAuth.getInstance().createUser(createRequest);
-        // return "User created with UID: " + userRecord.getUid();
+        // 🔹 Sauvegarde dans PostgreSQL
+        User user = new User(
+                userRecord.getUid(),
+                userRecord.getEmail(),
+                request.getFirstName(), 
+                request.getLastName(),
+                request.getPhoneNumber(),
+                request.getCinNumber());
+        userRepository.save(user);
 
+        // 🔹 Ensuite connexion automatique
         return signin(new SigninRequest(request.getEmail(), request.getPassword()));
     }
 
@@ -70,12 +82,14 @@ public class AuthService {
         authResponse.setEmail((String) response.get("email"));
         authResponse.setUid((String) response.get("localId"));
 
-        try {
-            UserRecord user = FirebaseAuth.getInstance().getUser(authResponse.getUid());
-            authResponse.setDisplayName(user.getDisplayName());
-            authResponse.setPhotoUrl(user.getPhotoUrl());
+        // 🔹 Récupération des infos PostgreSQL pour compléter AuthResponse
+        Optional<User> optionalUser = userRepository.findById(authResponse.getUid());
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            authResponse.setFirstName(user.getFirstName());
+            authResponse.setLastName(user.getLastName());
             authResponse.setPhoneNumber(user.getPhoneNumber());
-        } catch (Exception ignored) {
+            authResponse.setCinNumber(user.getCinNumber());
         }
 
         return authResponse;
