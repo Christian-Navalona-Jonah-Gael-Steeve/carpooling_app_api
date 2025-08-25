@@ -21,10 +21,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/signup", "/api/auth/signin").permitAll()
-                        .anyRequest().authenticated()
-                )
+               .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/api/auth/signup", "/api/auth/signin", "/api/auth/refresh").permitAll()
+                    .anyRequest().authenticated())
                 .addFilterBefore(new FirebaseTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

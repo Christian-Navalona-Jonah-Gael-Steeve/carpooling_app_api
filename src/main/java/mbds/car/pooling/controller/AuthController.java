@@ -1,12 +1,20 @@
 package mbds.car.pooling.controller;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.google.firebase.remoteconfig.internal.TemplateResponse.UserResponse;
+
 import mbds.car.pooling.service.AuthService;
 import mbds.car.pooling.models.AuthResponse;
 import mbds.car.pooling.models.SigninRequest;
 import mbds.car.pooling.models.SignupRequest;
+import mbds.car.pooling.models.dto.UserDTO;
+
 import org.springframework.security.core.Authentication;
 
 @RestController
@@ -37,6 +45,18 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getUserInfo(Authentication auth) {
-        return ResponseEntity.ok("Vous êtes connecté avec UID: " + auth.getName());
+        String uid = auth.getName(); // c'est l'UID mis dans FirebaseTokenFilter
+        UserDTO user = authService.getUserByUid(uid);
+        return ResponseEntity.ok(user);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return ResponseEntity.badRequest().body("Refresh token manquant");
+        }
+        AuthResponse response = authService.refreshToken(refreshToken);
+        return ResponseEntity.ok(response);
     }
 }

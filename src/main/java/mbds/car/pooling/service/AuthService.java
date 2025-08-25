@@ -3,15 +3,23 @@ package mbds.car.pooling.service;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
+import com.google.firebase.remoteconfig.internal.TemplateResponse.UserResponse;
 
 import mbds.car.pooling.repository.UserRepository;
 import mbds.car.pooling.models.AuthResponse;
 import mbds.car.pooling.models.SigninRequest;
 import mbds.car.pooling.models.SignupRequest;
 import mbds.car.pooling.models.User;
+import mbds.car.pooling.models.dto.UserDTO;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -26,6 +34,8 @@ public class AuthService {
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public AuthService(FirebaseApp fire_app, UserRepository userRepository) {
         this.firebaseApp = fire_app;
@@ -95,4 +105,56 @@ public class AuthService {
 
         return authResponse;
     }
+
+    public UserDTO getUserByUid(String uid) {
+        return userRepository.findById(uid)
+                .map(user -> {
+                    UserDTO dto = new UserDTO();
+                    dto.setUid(user.getUid());
+                    dto.setEmail(user.getEmail());
+                    dto.setFirstName(user.getFirstName());
+                    dto.setLastName(user.getLastName());
+                    dto.setPhoneNumber(user.getPhoneNumber());
+                    dto.setCinNumber(user.getCinNumber());
+                    dto.setRole(user.getRole());
+                    return dto;
+                })
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
+
+    public AuthResponse refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            throw new IllegalArgumentException("Refresh token is missing");
+        }
+
+        String url = "https://securetoken.googleapis.com/v1/token?key=" + firebaseApiKey;
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "refresh_token");
+        params.add("refresh_token", refreshToken);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
+        if (response == null || response.get("id_token") == null) {
+            throw new RuntimeException("Invalid refresh token or Firebase response error");
+        }
+
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setIdToken((String) response.get("id_token"));
+        authResponse.setRefreshToken((String) response.get("refresh_token"));
+        
+        Object expiresInObj = response.get("expires_in");
+        long expiresIn = expiresInObj != null ? Long.parseLong(expiresInObj.toString()) : 3600;
+        authResponse.setExpiresIn(expiresIn);
+
+        authResponse.setEmail((String) response.get("user_email")); // Firebase ne renvoie pas toujours email
+        authResponse.setUid((String) response.get("user_id"));       // ou "user_id" ou "user_id" selon réponse
+
+        return authResponse;
+    }
+
 }
