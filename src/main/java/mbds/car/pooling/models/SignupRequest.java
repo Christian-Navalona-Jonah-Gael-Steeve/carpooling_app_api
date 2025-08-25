@@ -16,4 +16,5 @@ public class SignupRequest {
     private String cinNumber;   // optionnel
     private String photoUrl;    // optionnel
     private boolean disabled = false; // optionnel, par défaut false
+    private UserRole role;
 }

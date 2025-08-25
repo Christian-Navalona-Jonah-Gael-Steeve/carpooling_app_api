@@ -50,10 +50,11 @@ public class AuthService {
         User user = new User(
                 userRecord.getUid(),
                 userRecord.getEmail(),
-                request.getFirstName(), 
+                request.getFirstName(),
                 request.getLastName(),
                 request.getPhoneNumber(),
-                request.getCinNumber());
+                request.getCinNumber(),
+                request.getRole());
         userRepository.save(user);
 
         // 🔹 Ensuite connexion automatique
