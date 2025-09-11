@@ -1,17 +1,17 @@
 package mbds.car.pooling.service;
 
-import mbds.car.pooling.dto.AuthResponse;
-import mbds.car.pooling.dto.SigninRequest;
-import mbds.car.pooling.dto.SignupRequest;
-import mbds.car.pooling.dto.UserDTO;
+import mbds.car.pooling.dto.AuthResponseDto;
+import mbds.car.pooling.dto.SigninRequestDto;
+import mbds.car.pooling.dto.SignupRequestDto;
+import mbds.car.pooling.dto.UserDto;
 
 public interface IAuthService {
 
-    UserDTO signup(SignupRequest request) throws Exception;
+    UserDto signup(SignupRequestDto request) throws Exception;
 
-    AuthResponse signin(SigninRequest request);
+    AuthResponseDto signin(SigninRequestDto request);
 
-    UserDTO getUserByUid(String uid);
+    UserDto getUserByUid(String uid);
 
-    AuthResponse refreshToken(String refreshToken);
+    AuthResponseDto refreshToken(String refreshToken);
 }

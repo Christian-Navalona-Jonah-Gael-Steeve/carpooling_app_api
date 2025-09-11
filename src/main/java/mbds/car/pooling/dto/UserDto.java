@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import mbds.car.pooling.models.UserRole;
+import mbds.car.pooling.model.UserRole;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
+public class UserDto {
     private String uid;
     private String email;
     private String firstName;

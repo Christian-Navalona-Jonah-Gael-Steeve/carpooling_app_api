@@ -3,14 +3,14 @@ package mbds.car.pooling.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import mbds.car.pooling.models.UserRole;
+import mbds.car.pooling.model.UserRole;
 
 import java.util.List;
 
 @Data
 @NoArgsConstructor   // constructeur vide
 @AllArgsConstructor  // constructeur avec tous les champs
-public class SignupRequest {
+public class SignupRequestDto {
     private String email;           // obligatoire
     private String password;        // obligatoire
     private String firstName;       // obligatoire

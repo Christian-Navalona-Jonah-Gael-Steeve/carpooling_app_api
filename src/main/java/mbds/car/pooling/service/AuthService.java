@@ -4,12 +4,12 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 
+import mbds.car.pooling.dto.SigninRequestDto;
 import mbds.car.pooling.repository.UserRepository;
-import mbds.car.pooling.dto.AuthResponse;
-import mbds.car.pooling.dto.SigninRequest;
-import mbds.car.pooling.dto.SignupRequest;
-import mbds.car.pooling.dto.UserDTO;
-import mbds.car.pooling.models.User;
+import mbds.car.pooling.dto.AuthResponseDto;
+import mbds.car.pooling.dto.SignupRequestDto;
+import mbds.car.pooling.dto.UserDto;
+import mbds.car.pooling.model.User;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public UserDTO signup(SignupRequest request) throws Exception {
+    public UserDto signup(SignupRequestDto request) throws Exception {
         // 🔹 Création sur Firebase
         UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
                 .setEmail(request.getEmail())
@@ -69,7 +69,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public AuthResponse signin(SigninRequest request) {
+    public AuthResponseDto signin(SigninRequestDto request) {
         String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + firebaseApiKey;
 
         Map<String, Object> body = new HashMap<>();
@@ -83,18 +83,18 @@ public class AuthService implements IAuthService {
             return null;
         }
 
-        AuthResponse authResponse = new AuthResponse();
-        authResponse.setAccessToken((String) response.get("idToken"));       // 🔹 token d’accès
-        authResponse.setRefreshToken((String) response.get("refreshToken")); // 🔹 refresh token
+        AuthResponseDto authResponseDto = new AuthResponseDto();
+        authResponseDto.setAccessToken((String) response.get("idToken"));       // 🔹 token d’accès
+        authResponseDto.setRefreshToken((String) response.get("refreshToken")); // 🔹 refresh token
 
-        return authResponse;
+        return authResponseDto;
     }
 
     @Override
-    public UserDTO getUserByUid(String uid) {
+    public UserDto getUserByUid(String uid) {
         return userRepository.findById(uid)
                 .map(user -> {
-                    UserDTO dto = new UserDTO();
+                    UserDto dto = new UserDto();
                     dto.setUid(user.getUid());
                     dto.setEmail(user.getEmail());
                     dto.setFirstName(user.getFirstName());
@@ -108,7 +108,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public AuthResponse refreshToken(String refreshToken) {
+    public AuthResponseDto refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
             throw new IllegalArgumentException("Refresh token is missing");
         }
@@ -129,11 +129,11 @@ public class AuthService implements IAuthService {
             throw new RuntimeException("Invalid refresh token or Firebase response error");
         }
 
-        AuthResponse authResponse = new AuthResponse();
-        authResponse.setAccessToken((String) response.get("id_token"));        // 🔹 nouveau token d’accès
-        authResponse.setRefreshToken((String) response.get("refresh_token"));  // 🔹 nouveau refresh token
+        AuthResponseDto authResponseDto = new AuthResponseDto();
+        authResponseDto.setAccessToken((String) response.get("id_token"));        // 🔹 nouveau token d’accès
+        authResponseDto.setRefreshToken((String) response.get("refresh_token"));  // 🔹 nouveau refresh token
 
-        return authResponse;
+        return authResponseDto;
     }
 
 }

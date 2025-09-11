@@ -1,4 +1,4 @@
-package mbds.car.pooling.models;
+package mbds.car.pooling.model;
 
 import jakarta.persistence.*;
 
