@@ -1,36 +1,33 @@
 package mbds.car.pooling.controller;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.google.firebase.remoteconfig.internal.TemplateResponse.UserResponse;
-
-import mbds.car.pooling.service.AuthService;
-import mbds.car.pooling.models.AuthResponse;
-import mbds.car.pooling.models.SigninRequest;
-import mbds.car.pooling.models.SignupRequest;
-import mbds.car.pooling.models.dto.UserDTO;
+import mbds.car.pooling.dto.AuthResponse;
+import mbds.car.pooling.dto.SigninRequest;
+import mbds.car.pooling.dto.SignupRequest;
+import mbds.car.pooling.dto.UserDTO;
+import mbds.car.pooling.service.IAuthService;
 
 import org.springframework.security.core.Authentication;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
         try {
-            AuthResponse response = authService.signup(request);
+            UserDTO response = authService.signup(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -40,12 +37,12 @@ public class AuthController {
         if (response != null) {
             return ResponseEntity.ok(response);
         }
-        return ResponseEntity.status(401).body("Invalid credentials");
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 
     @GetMapping("/me")
     public ResponseEntity<?> getUserInfo(Authentication auth) {
-        String uid = auth.getName(); // c'est l'UID mis dans FirebaseTokenFilter
+        String uid = auth.getName(); // UID injecté par FirebaseTokenFilter
         UserDTO user = authService.getUserByUid(uid);
         return ResponseEntity.ok(user);
     }
@@ -54,7 +51,7 @@ public class AuthController {
     public ResponseEntity<?> refresh(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
         if (refreshToken == null || refreshToken.isEmpty()) {
-            return ResponseEntity.badRequest().body("Refresh token manquant");
+            return ResponseEntity.badRequest().body(Map.of("error", "Refresh token manquant"));
         }
         AuthResponse response = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(response);

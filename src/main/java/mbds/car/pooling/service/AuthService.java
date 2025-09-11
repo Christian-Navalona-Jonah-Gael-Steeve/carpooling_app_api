@@ -3,14 +3,13 @@ package mbds.car.pooling.service;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
-import com.google.firebase.remoteconfig.internal.TemplateResponse.UserResponse;
 
 import mbds.car.pooling.repository.UserRepository;
-import mbds.car.pooling.models.AuthResponse;
-import mbds.car.pooling.models.SigninRequest;
-import mbds.car.pooling.models.SignupRequest;
+import mbds.car.pooling.dto.AuthResponse;
+import mbds.car.pooling.dto.SigninRequest;
+import mbds.car.pooling.dto.SignupRequest;
+import mbds.car.pooling.dto.UserDTO;
 import mbds.car.pooling.models.User;
-import mbds.car.pooling.models.dto.UserDTO;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,14 +19,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
-public class AuthService {
+public class AuthService implements IAuthService {
 
     @Value("${firebase.api-key}")
     private String firebaseApiKey;
@@ -42,9 +39,9 @@ public class AuthService {
         this.userRepository = userRepository;
     }
 
-    public AuthResponse signup(SignupRequest request)
-            throws Exception {
-        // 🔹 Création sur Firebase (uniquement champs Firebase)
+    @Override
+    public UserDTO signup(SignupRequest request) throws Exception {
+        // 🔹 Création sur Firebase
         UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
                 .setEmail(request.getEmail())
                 .setPassword(request.getPassword())
@@ -53,7 +50,6 @@ public class AuthService {
                 .setPhoneNumber(request.getPhoneNumber())
                 .setDisabled(request.isDisabled());
 
-        // 🔹 Création de l’utilisateur sur Firebase
         UserRecord userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
 
         // 🔹 Sauvegarde dans PostgreSQL
@@ -64,17 +60,18 @@ public class AuthService {
                 request.getLastName(),
                 request.getPhoneNumber(),
                 request.getCinNumber(),
-                request.getRole());
+                request.getRoles()
+        );
         userRepository.save(user);
 
         // 🔹 Ensuite connexion automatique
-        return signin(new SigninRequest(request.getEmail(), request.getPassword()));
+        return getUserByUid(user.getUid());
     }
 
+    @Override
     public AuthResponse signin(SigninRequest request) {
         String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + firebaseApiKey;
 
-        RestTemplate restTemplate = new RestTemplate();
         Map<String, Object> body = new HashMap<>();
         body.put("email", request.getEmail());
         body.put("password", request.getPassword());
@@ -87,25 +84,13 @@ public class AuthService {
         }
 
         AuthResponse authResponse = new AuthResponse();
-        authResponse.setIdToken((String) response.get("idToken"));
-        authResponse.setRefreshToken((String) response.get("refreshToken"));
-        authResponse.setExpiresIn(Long.parseLong((String) response.get("expiresIn")));
-        authResponse.setEmail((String) response.get("email"));
-        authResponse.setUid((String) response.get("localId"));
-
-        // 🔹 Récupération des infos PostgreSQL pour compléter AuthResponse
-        Optional<User> optionalUser = userRepository.findById(authResponse.getUid());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            authResponse.setFirstName(user.getFirstName());
-            authResponse.setLastName(user.getLastName());
-            authResponse.setPhoneNumber(user.getPhoneNumber());
-            authResponse.setCinNumber(user.getCinNumber());
-        }
+        authResponse.setAccessToken((String) response.get("idToken"));       // 🔹 token d’accès
+        authResponse.setRefreshToken((String) response.get("refreshToken")); // 🔹 refresh token
 
         return authResponse;
     }
 
+    @Override
     public UserDTO getUserByUid(String uid) {
         return userRepository.findById(uid)
                 .map(user -> {
@@ -116,12 +101,13 @@ public class AuthService {
                     dto.setLastName(user.getLastName());
                     dto.setPhoneNumber(user.getPhoneNumber());
                     dto.setCinNumber(user.getCinNumber());
-                    dto.setRole(user.getRole());
+                    dto.setRoles(user.getRoles());
                     return dto;
                 })
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
     }
 
+    @Override
     public AuthResponse refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
             throw new IllegalArgumentException("Refresh token is missing");
@@ -144,15 +130,8 @@ public class AuthService {
         }
 
         AuthResponse authResponse = new AuthResponse();
-        authResponse.setIdToken((String) response.get("id_token"));
-        authResponse.setRefreshToken((String) response.get("refresh_token"));
-        
-        Object expiresInObj = response.get("expires_in");
-        long expiresIn = expiresInObj != null ? Long.parseLong(expiresInObj.toString()) : 3600;
-        authResponse.setExpiresIn(expiresIn);
-
-        authResponse.setEmail((String) response.get("user_email")); // Firebase ne renvoie pas toujours email
-        authResponse.setUid((String) response.get("user_id"));       // ou "user_id" ou "user_id" selon réponse
+        authResponse.setAccessToken((String) response.get("id_token"));        // 🔹 nouveau token d’accès
+        authResponse.setRefreshToken((String) response.get("refresh_token"));  // 🔹 nouveau refresh token
 
         return authResponse;
     }

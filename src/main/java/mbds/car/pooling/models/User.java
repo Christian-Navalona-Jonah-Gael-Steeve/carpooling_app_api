@@ -1,14 +1,12 @@
 package mbds.car.pooling.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -25,8 +23,7 @@ public class User {
     private String phoneNumber;
     private String cinNumber;
 
+    @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    private UserRole role;
-
-
+    private List<UserRole> roles;
 }
