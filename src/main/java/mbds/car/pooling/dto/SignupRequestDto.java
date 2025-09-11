@@ -3,7 +3,7 @@ package mbds.car.pooling.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import mbds.car.pooling.model.UserRole;
+import mbds.car.pooling.enums.UserRole;
 
 import java.util.List;
 

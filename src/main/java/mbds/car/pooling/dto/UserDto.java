@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import mbds.car.pooling.model.UserRole;
+import mbds.car.pooling.enums.UserRole;
 
 import java.util.List;
 
