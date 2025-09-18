@@ -8,16 +8,16 @@ import mbds.car.pooling.enums.UserRole;
 import java.util.List;
 
 @Data
-@NoArgsConstructor   // constructeur vide
-@AllArgsConstructor  // constructeur avec tous les champs
+@NoArgsConstructor
+@AllArgsConstructor
 public class SignupRequestDto {
-    private String email;           // obligatoire
-    private String password;        // obligatoire
-    private String firstName;       // obligatoire
-    private String lastName;        // obligatoire
-    private String phoneNumber;     // optionnel
-    private String cinNumber;       // optionnel
-    private String photoUrl;        // optionnel
-    private boolean disabled = false; // optionnel, par défaut false
-    private List<UserRole> roles;   // tableau/liste de rôles
+    private String email;
+    private String password;
+    private String firstName;
+    private String lastName;
+    private String phoneNumber;
+    private String cinNumber;
+    private String photoUrl;
+    private boolean disabled = false;
+    private List<UserRole> roles;
 }

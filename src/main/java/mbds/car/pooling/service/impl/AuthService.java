@@ -1,4 +1,4 @@
-package mbds.car.pooling.service;
+package mbds.car.pooling.service.impl;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
@@ -11,6 +11,7 @@ import mbds.car.pooling.dto.SignupRequestDto;
 import mbds.car.pooling.dto.UserDto;
 import mbds.car.pooling.model.User;
 
+import mbds.car.pooling.service.IAuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
