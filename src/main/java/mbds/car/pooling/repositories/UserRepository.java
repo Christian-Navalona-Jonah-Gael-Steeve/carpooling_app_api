@@ -1,6 +1,6 @@
-package mbds.car.pooling.repository;
+package mbds.car.pooling.repositories;
 
-import mbds.car.pooling.model.User;
+import mbds.car.pooling.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package mbds.car.pooling.controller;
+package mbds.car.pooling.controllers;
 
 import lombok.RequiredArgsConstructor;
 import mbds.car.pooling.dto.SigninRequestDto;
@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import mbds.car.pooling.dto.AuthResponseDto;
 import mbds.car.pooling.dto.SignupRequestDto;
 import mbds.car.pooling.dto.UserDto;
-import mbds.car.pooling.service.IAuthService;
+import mbds.car.pooling.services.IAuthService;
 
 import org.springframework.security.core.Authentication;
 

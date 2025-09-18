@@ -1,4 +1,4 @@
-package mbds.car.pooling.controller;
+package mbds.car.pooling.controllers;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

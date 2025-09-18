@@ -1,4 +1,4 @@
-package mbds.car.pooling.service;
+package mbds.car.pooling.services;
 
 import mbds.car.pooling.dto.AuthResponseDto;
 import mbds.car.pooling.dto.SigninRequestDto;
