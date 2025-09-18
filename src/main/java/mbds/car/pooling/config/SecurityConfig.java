@@ -23,6 +23,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/auth/signup", "/api/auth/signin", "/api/auth/refresh").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html", "/api-docs/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .anyRequest().authenticated())
                 .addFilterBefore(new FirebaseTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
