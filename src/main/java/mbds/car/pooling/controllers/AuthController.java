@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import mbds.car.pooling.dto.AuthResponseDto;
 import mbds.car.pooling.dto.SignupRequestDto;
 import mbds.car.pooling.dto.UserDto;
-import mbds.car.pooling.services.IAuthService;
+import mbds.car.pooling.services.AuthService;
 
 import org.springframework.security.core.Authentication;
 
@@ -20,7 +20,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class AuthController {
 
-    private final IAuthService authService;
+    private final AuthService authService;
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequestDto request) {

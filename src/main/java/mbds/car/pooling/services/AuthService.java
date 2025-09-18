@@ -5,7 +5,7 @@ import mbds.car.pooling.dto.SigninRequestDto;
 import mbds.car.pooling.dto.SignupRequestDto;
 import mbds.car.pooling.dto.UserDto;
 
-public interface IAuthService {
+public interface AuthService {
 
     UserDto signup(SignupRequestDto request) throws Exception;
 

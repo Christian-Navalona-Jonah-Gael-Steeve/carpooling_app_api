@@ -11,7 +11,7 @@ import mbds.car.pooling.dto.SignupRequestDto;
 import mbds.car.pooling.dto.UserDto;
 import mbds.car.pooling.entities.User;
 
-import mbds.car.pooling.services.IAuthService;
+import mbds.car.pooling.services.AuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class AuthService implements IAuthService {
+public class AuthServiceImpl implements AuthService {
 
     @Value("${firebase.api-key}")
     private String firebaseApiKey;
@@ -35,7 +35,7 @@ public class AuthService implements IAuthService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public AuthService(FirebaseApp fire_app, UserRepository userRepository) {
+    public AuthServiceImpl(FirebaseApp fire_app, UserRepository userRepository) {
         this.firebaseApp = fire_app;
         this.userRepository = userRepository;
     }
