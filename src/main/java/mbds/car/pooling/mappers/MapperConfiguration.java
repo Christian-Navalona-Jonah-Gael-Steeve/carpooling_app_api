@@ -10,7 +10,7 @@ import org.mapstruct.ReportingPolicy;
  */
 @MapperConfig(
     componentModel = "spring",
-    unmappedTargetPolicy = ReportingPolicy.IGNORE
+    unmappedTargetPolicy = ReportingPolicy.WARN
 )
 public interface MapperConfiguration {
     // This interface serves as a common configuration for all mappers

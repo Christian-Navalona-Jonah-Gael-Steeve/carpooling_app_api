@@ -7,10 +7,7 @@ import org.mapstruct.Mapper;
 /**
  * Mapper for ChatMessage
  */
-@Mapper(
-    config = MapperConfiguration.class,
-    uses = {UserMapper.class}
-)
+@Mapper(config = MapperConfiguration.class, uses = {UserMapper.class})
 public interface ChatMessageMapper {
 
     /**

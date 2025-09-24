@@ -31,13 +31,13 @@ public class ChatMessage {
 
     private String content;
 
-    @Column(name = "sent_at", nullable = false, updatable = false)
+    @Column(name = "sent_at", nullable = false)
     private LocalDateTime sentAt;
 
-    @Column(name = "delivered_at", nullable = false, updatable = false)
+    @Column(name = "delivered_at")
     private LocalDateTime deliveredAt;
 
-    @Column(name = "read_at", nullable = false, updatable = false)
+    @Column(name = "read_at")
     private LocalDateTime readAt;
 
     @Enumerated(EnumType.STRING)

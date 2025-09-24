@@ -7,16 +7,12 @@ import org.mapstruct.Mapper;
 
 /**
  * MapStruct mapper for ConversationDto
- *
- * This mapper provides utilities for building conversation DTOs
- * Currently used for creating conversation objects from individual components
  */
-@Mapper(config = MapperConfiguration.class)
+@Mapper(config = MapperConfiguration.class, uses = {UserMapper.class, ChatMessageMapper.class})
 public interface ConversationMapper {
 
     /**
      * Creates a ConversationDto using the builder pattern
-     * This is a helper method for creating conversation DTOs
      *
      * @param recipient the conversation partner
      * @param lastMessage the last message in the conversation
