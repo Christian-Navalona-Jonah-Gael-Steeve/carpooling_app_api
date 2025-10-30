@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mbds.car.pooling.enums.MessageStatus;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,25 +22,33 @@ public class ChatMessage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "sender_uid", nullable = false)
-    private User sender;
+    @JoinColumn(name = "conversation_id", nullable = false)
+    private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "recipient_uid", nullable = false)
-    private User recipient;
+    @JoinColumn(name = "sender_uid", nullable = false)
+    private User sender;
 
     private String content;
 
     @Column(name = "sent_at", nullable = false)
-    private LocalDateTime sentAt;
+    private Instant sentAt;
 
     @Column(name = "delivered_at")
-    private LocalDateTime deliveredAt;
+    private Instant deliveredAt;
 
     @Column(name = "read_at")
-    private LocalDateTime readAt;
+    private Instant readAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MessageStatus status;
+
+    @PrePersist
+    protected void onCreate() {
+        sentAt = Instant.now();
+        if (status == null) {
+            status = MessageStatus.SENT;
+        }
+    }
 }
