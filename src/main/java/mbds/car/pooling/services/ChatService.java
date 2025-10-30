@@ -1,14 +1,18 @@
 package mbds.car.pooling.services;
 
 import mbds.car.pooling.dto.ChatMessageDto;
-import mbds.car.pooling.dto.ConversationDto;
-import mbds.car.pooling.entities.ChatMessage;
 
-import java.util.List;
-
+/**
+ * Service interface for managing conversation messages
+ */
 public interface ChatService {
+    /**
+     * Save a new chat message
+     */
     ChatMessageDto save(ChatMessageDto message);
+
+    /**
+     * Update an existing chat message
+     */
     ChatMessageDto update(ChatMessageDto message);
-    List<ChatMessageDto> getChatHistory(String userId1, String userId2);
-    List<ConversationDto> getUserConversations(String userId);
 }

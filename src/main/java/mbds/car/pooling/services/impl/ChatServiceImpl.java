@@ -1,32 +1,28 @@
 package mbds.car.pooling.services.impl;
 
 import mbds.car.pooling.dto.ChatMessageDto;
-import mbds.car.pooling.dto.ConversationDto;
 import mbds.car.pooling.services.ChatService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
+/**
+ * Implementation of ChatService
+ */
 @Service
+@Transactional(readOnly = true)
 public class ChatServiceImpl implements ChatService {
 
+    public ChatServiceImpl() {}
+
     @Override
+    @Transactional
     public ChatMessageDto save(ChatMessageDto message) {
         return null;
     }
 
     @Override
+    @Transactional
     public ChatMessageDto update(ChatMessageDto message) {
         return null;
-    }
-
-    @Override
-    public List<ChatMessageDto> getChatHistory(String userId1, String userId2) {
-        return List.of();
-    }
-
-    @Override
-    public List<ConversationDto> getUserConversations(String userId) {
-        return List.of();
     }
 }

@@ -1,9 +1,13 @@
 package mbds.car.pooling.mappers;
 
 import mbds.car.pooling.dto.ConversationDto;
+import mbds.car.pooling.dto.ConversationListItemDto;
+import mbds.car.pooling.dto.ConversationMessageDto;
 import mbds.car.pooling.dto.UserDto;
 import mbds.car.pooling.dto.ChatMessageDto;
+import mbds.car.pooling.entities.ChatMessage;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
  * MapStruct mapper for ConversationDto
@@ -26,4 +30,13 @@ public interface ConversationMapper {
             .unreadMessages(unreadMessages)
             .build();
     }
+
+    /**
+     * Maps ChatMessage entity to ConversationMessageDto
+     *
+     * @param chatMessage the chat message entity
+     * @return ConversationMessageDto or null if chatMessage is null
+     */
+    @Mapping(source = "conversation.id", target = "conversationId")
+    ConversationMessageDto toConversationMessageDto(ChatMessage chatMessage);
 }

@@ -7,16 +7,15 @@ import lombok.NoArgsConstructor;
 import mbds.car.pooling.enums.MessageStatus;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class ChatMessageDto {
+@AllArgsConstructor
+public class ConversationMessageDto {
     private Long id;
+    private Long conversationId;
     private UserDto sender;
-    private UserDto recipient;
     private String content;
     private Instant sentAt;
     private Instant deliveredAt;
