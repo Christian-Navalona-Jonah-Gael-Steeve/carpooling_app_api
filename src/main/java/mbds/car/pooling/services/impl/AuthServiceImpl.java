@@ -4,14 +4,17 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 
-import mbds.car.pooling.dto.SigninRequestDto;
+import jakarta.transaction.Transactional;
+import mbds.car.pooling.dto.*;
+import mbds.car.pooling.entities.VerificationCode;
+import mbds.car.pooling.enums.AccountStatus;
 import mbds.car.pooling.repositories.UserRepository;
-import mbds.car.pooling.dto.AuthResponseDto;
-import mbds.car.pooling.dto.SignupRequestDto;
-import mbds.car.pooling.dto.UserDto;
 import mbds.car.pooling.entities.User;
 
+import mbds.car.pooling.repositories.VerificationCodeRepository;
 import mbds.car.pooling.services.AuthService;
+import mbds.car.pooling.services.EmailService;
+import mbds.car.pooling.utils.CodeGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -21,6 +24,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,46 +36,104 @@ public class AuthServiceImpl implements AuthService {
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final EmailService emailService;
 
-    public AuthServiceImpl(FirebaseApp fire_app, UserRepository userRepository) {
+    public AuthServiceImpl(FirebaseApp fire_app, UserRepository userRepository, VerificationCodeRepository verificationCodeRepository, EmailService emailService) {
         this.firebaseApp = fire_app;
         this.userRepository = userRepository;
+        this.verificationCodeRepository = verificationCodeRepository;
+        this.emailService = emailService;
     }
 
     @Override
+    @Transactional
     public UserDto signup(SignupRequestDto request) throws Exception {
-        // 🔹 Création sur Firebase
-        UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
-                .setEmail(request.getEmail())
-                .setPassword(request.getPassword())
-                .setDisplayName(request.getFirstName() + " " + request.getLastName())
-                .setPhotoUrl(request.getPhotoUrl())
-                .setPhoneNumber(request.getPhoneNumber())
-                .setDisabled(request.isDisabled());
+        try {
+            // 🔹 Étape 1 : Création Firebase
+            UserRecord userRecord;
+            try {
+                UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
+                        .setEmail(request.getEmail())
+                        .setPassword(request.getPassword())
+                        .setDisplayName(request.getFirstName() + " " + request.getLastName())
+                        // 🔸 Supprime cette ligne si tu ne veux pas gérer photoUrl
+                        // .setPhotoUrl(request.getPhotoUrl())
+                        .setPhoneNumber(request.getPhoneNumber())
+                        .setDisabled(true); // ⚠️ désactivé jusqu’à vérification
 
-        UserRecord userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
+                userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
+                System.out.println("✅ Firebase user created: " + userRecord.getUid());
+            } catch (Exception e) {
+                System.err.println("❌ Erreur Firebase: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de la création du compte Firebase.", e);
+            }
 
-        // 🔹 Sauvegarde dans PostgreSQL
-        User user = new User(
-                userRecord.getUid(),
-                userRecord.getEmail(),
-                request.getFirstName(),
-                request.getLastName(),
-                request.getPhoneNumber(),
-                request.getCinNumber(),
-                request.getRoles()
-        );
-        userRepository.save(user);
+            // 🔹 Étape 2 : Sauvegarde PostgreSQL
+            User user;
+            try {
+                user = new User(
+                        userRecord.getUid(),
+                        userRecord.getEmail(),
+                        request.getFirstName(),
+                        request.getLastName(),
+                        request.getPhoneNumber(),
+                        request.getCinNumber(),
+                        request.getRoles(),
+                        AccountStatus.PENDING
+                );
+                userRepository.save(user);
+                System.out.println("✅ Utilisateur enregistré dans PostgreSQL: " + user.getEmail());
+            } catch (Exception e) {
+                System.err.println("❌ Erreur PostgreSQL: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de l’enregistrement dans PostgreSQL.", e);
+            }
 
-        // 🔹 Ensuite connexion automatique
-        return getUserByUid(user.getUid());
+            // 🔹 Étape 3 : Génération + sauvegarde du code
+            String code;
+            try {
+                code = CodeGenerator.generateCode();
+
+                // ✅ Supprimer tous les anciens codes pour cet email avant d’enregistrer le nouveau
+                verificationCodeRepository.deleteByEmail(request.getEmail());
+
+                VerificationCode verificationCode = new VerificationCode();
+                verificationCode.setEmail(user.getEmail());
+                verificationCode.setCode(code);
+                verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+
+                verificationCodeRepository.save(verificationCode);
+
+                System.out.println("✅ Code de vérification généré: " + code);
+            } catch (Exception e) {
+                System.err.println("❌ Erreur génération/sauvegarde code: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de la génération du code de vérification.", e);
+            }
+
+            // 🔹 Étape 4 : Envoi de mail
+            try {
+                emailService.sendVerificationCode(user.getEmail(), code);
+                System.out.println("✅ Email de vérification envoyé à " + user.getEmail());
+            } catch (Exception e) {
+                System.err.println("❌ Erreur envoi email: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de l’envoi de l’email de vérification.", e);
+            }
+
+            // 🔹 Étape 5 : Retour
+            return getUserByUid(user.getUid());
+
+        } catch (Exception e) {
+            System.err.println("🚨 Erreur globale dans signup(): " + e.getMessage());
+            e.printStackTrace();
+            throw e; // relancer l'erreur pour être visible dans la réponse API
+        }
     }
 
     @Override
     public AuthResponseDto signin(SigninRequestDto request) {
-        String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + firebaseApiKey;
+        String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AuthServiceImpl" + firebaseApiKey;
 
         Map<String, Object> body = new HashMap<>();
         body.put("email", request.getEmail());
@@ -135,6 +197,79 @@ public class AuthServiceImpl implements AuthService {
         authResponseDto.setRefreshToken((String) response.get("refresh_token"));  // 🔹 nouveau refresh token
 
         return authResponseDto;
+    }
+
+    @Transactional
+    @Override
+    public VerificationResponseDto verifyCode(VerificationRequestDto request) {
+        try {
+            // 🔹 Récupérer le dernier code valide pour cet email
+            VerificationCode verificationCode = verificationCodeRepository
+                    .findTopValidByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Aucun code trouvé pour cet email."));
+
+            // 🔹 Vérifier le code
+            if (!verificationCode.getCode().equals(request.getCode())) {
+                return new VerificationResponseDto(false, "❌ Code incorrect");
+            }
+
+            // 🔹 Vérifier l'expiration
+            if (verificationCode.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return new VerificationResponseDto(false, "⏰ Code expiré");
+            }
+
+            // 🔹 Récupérer l'utilisateur
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+
+            // 🔹 Activer l'utilisateur
+            user.setStatus(AccountStatus.ACTIVE);
+            userRepository.save(user);
+
+            // 🔹 Activer dans Firebase
+            FirebaseAuth.getInstance().updateUser(
+                    new UserRecord.UpdateRequest(user.getUid()).setDisabled(false)
+            );
+
+            // 🔹 Supprimer tous les codes existants pour cet email
+            verificationCodeRepository.deleteByEmail(request.getEmail());
+
+            return new VerificationResponseDto(true, "✅ Compte activé avec succès !");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new VerificationResponseDto(false,
+                    "🚨 Erreur lors de la vérification du code : " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public VerificationResponseDto resendVerificationCode(ResendCodeRequestDto request) {
+        try {
+            // 🔹 Vérifier que l'utilisateur existe
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+
+            // 🔹 Supprimer tous les anciens codes
+            verificationCodeRepository.deleteByEmail(user.getEmail());
+
+            // 🔹 Générer un nouveau code
+            String code = CodeGenerator.generateCode();
+
+            VerificationCode verificationCode = new VerificationCode();
+            verificationCode.setEmail(user.getEmail());
+            verificationCode.setCode(code);
+            verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            verificationCodeRepository.save(verificationCode);
+
+            // 🔹 Envoyer par email
+            emailService.sendVerificationCode(user.getEmail(), code);
+
+            return new VerificationResponseDto(true, "✅ Nouveau code de vérification envoyé !");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new VerificationResponseDto(false, "🚨 Erreur lors de l’envoi du code : " + e.getMessage());
+        }
     }
 
 }

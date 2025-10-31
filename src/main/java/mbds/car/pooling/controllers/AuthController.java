@@ -1,13 +1,10 @@
 package mbds.car.pooling.controllers;
 
 import lombok.RequiredArgsConstructor;
-import mbds.car.pooling.dto.SigninRequestDto;
+import mbds.car.pooling.dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import mbds.car.pooling.dto.AuthResponseDto;
-import mbds.car.pooling.dto.SignupRequestDto;
-import mbds.car.pooling.dto.UserDto;
 import mbds.car.pooling.services.AuthService;
 
 import org.springframework.security.core.Authentication;
@@ -56,4 +53,16 @@ public class AuthController {
         AuthResponseDto response = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<VerificationResponseDto> verifyCode(@RequestBody VerificationRequestDto request) {
+        VerificationResponseDto response = authService.verifyCode(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/resend-code")
+    public VerificationResponseDto resendCode(@RequestBody ResendCodeRequestDto request) {
+        return authService.resendVerificationCode(request);
+    }
+
 }

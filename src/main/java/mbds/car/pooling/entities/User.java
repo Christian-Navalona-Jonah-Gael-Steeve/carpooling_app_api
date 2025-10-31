@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import mbds.car.pooling.enums.AccountStatus;
 import mbds.car.pooling.enums.UserRole;
 
 import java.util.List;
@@ -27,4 +28,9 @@ public class User {
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     private List<UserRole> roles;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status = AccountStatus.PENDING;
+
 }

@@ -1,9 +1,6 @@
 package mbds.car.pooling.services;
 
-import mbds.car.pooling.dto.AuthResponseDto;
-import mbds.car.pooling.dto.SigninRequestDto;
-import mbds.car.pooling.dto.SignupRequestDto;
-import mbds.car.pooling.dto.UserDto;
+import mbds.car.pooling.dto.*;
 
 public interface AuthService {
 
@@ -14,4 +11,8 @@ public interface AuthService {
     UserDto getUserByUid(String uid);
 
     AuthResponseDto refreshToken(String refreshToken);
+
+    VerificationResponseDto verifyCode(VerificationRequestDto request);
+
+    VerificationResponseDto resendVerificationCode(ResendCodeRequestDto request);
 }
