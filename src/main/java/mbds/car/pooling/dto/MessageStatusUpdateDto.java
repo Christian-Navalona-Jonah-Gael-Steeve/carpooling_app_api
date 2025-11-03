@@ -10,14 +10,11 @@ import java.time.Instant;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class ChatMessageDto {
-    private Long id;
-    private UserDto sender;
-    private String content;
-    private Instant sentAt;
-    private Instant deliveredAt;
-    private Instant readAt;
+@AllArgsConstructor
+public class MessageStatusUpdateDto {
+    private Long messageId;
+    private Long conversationId;
     private MessageStatus status;
+    private Instant timestamp;
 }
