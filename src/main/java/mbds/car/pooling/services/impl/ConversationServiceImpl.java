@@ -1,6 +1,5 @@
 package mbds.car.pooling.services.impl;
 
-import lombok.RequiredArgsConstructor;
 import mbds.car.pooling.dto.ChatMessageDto;
 import mbds.car.pooling.dto.ConversationListItemDto;
 import mbds.car.pooling.dto.ConversationMessageDto;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
  * Implementation of ConversationService
  */
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ConversationServiceImpl implements ConversationService {
 
@@ -35,6 +33,20 @@ public class ConversationServiceImpl implements ConversationService {
     private final ConversationMapper conversationMapper;
     private final ChatMessageMapper chatMessageMapper;
     private final UserMapper userMapper;
+
+    public ConversationServiceImpl(
+            ConversationRepository conversationRepository,
+            ChatMessageRepository chatMessageRepository,
+            ConversationMapper conversationMapper,
+            ChatMessageMapper chatMessageMapper,
+            UserMapper userMapper
+    ) {
+        this.conversationRepository = conversationRepository;
+        this.chatMessageRepository = chatMessageRepository;
+        this.conversationMapper = conversationMapper;
+        this.chatMessageMapper = chatMessageMapper;
+        this.userMapper = userMapper;
+    }
 
     @Override
     public List<ConversationListItemDto> getUserConversations(String userId, int page, int size) {
