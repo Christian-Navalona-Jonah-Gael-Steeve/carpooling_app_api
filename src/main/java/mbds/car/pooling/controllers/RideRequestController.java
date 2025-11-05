@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import mbds.car.pooling.dto.CreateRideRequestDto;
 import mbds.car.pooling.dto.RideRequestResponse;
+import mbds.car.pooling.services.RideRequestService;
 import mbds.car.pooling.services.impl.RideRequestServiceImpl;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @RequestMapping("/api/requests")
 @RequiredArgsConstructor
 public class RideRequestController {
-    private final RideRequestServiceImpl service;
+    private final RideRequestService service;
 
     @PostMapping
     public RideRequestResponse create(@RequestBody @Valid CreateRideRequestDto dto) {

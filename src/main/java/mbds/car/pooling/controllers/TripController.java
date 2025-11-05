@@ -7,6 +7,7 @@ import mbds.car.pooling.dto.CreateTripDto;
 import mbds.car.pooling.dto.SearchTripsDto;
 import mbds.car.pooling.dto.TripMatchResponse;
 import mbds.car.pooling.dto.TripResponse;
+import mbds.car.pooling.services.TripService;
 import mbds.car.pooling.services.impl.TripServiceImpl;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TripController {
 
-    private final TripServiceImpl tripService;
+    private final TripService tripService;
 
     @PostMapping
     public TripResponse create(@RequestBody CreateTripDto dto) {
