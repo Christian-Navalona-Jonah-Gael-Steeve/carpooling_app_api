@@ -3,6 +3,7 @@ package mbds.car.pooling.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import mbds.car.pooling.enums.TripStatus;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import java.time.OffsetDateTime;
@@ -30,12 +31,11 @@ public class Trip {
     private LineString route;
 
     @Enumerated(EnumType.STRING) @Column(nullable=false, length=16)
-    private Status status = Status.ACTIVE;
+    private TripStatus status = TripStatus.ACTIVE;
 
     private Integer seats;
     private OffsetDateTime departureAt;
     private OffsetDateTime arrivalAt;
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    public enum Status { ACTIVE, CLOSED, COMPLETED }
 }

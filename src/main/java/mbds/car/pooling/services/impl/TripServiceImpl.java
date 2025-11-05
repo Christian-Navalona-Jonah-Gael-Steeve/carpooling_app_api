@@ -1,13 +1,13 @@
 package mbds.car.pooling.services.impl;
 
-// TripService.java
-import lombok.RequiredArgsConstructor;
 import mbds.car.pooling.dto.*;
 import mbds.car.pooling.entities.Trip;
 import mbds.car.pooling.entities.User;
+import mbds.car.pooling.enums.TripStatus;
 import mbds.car.pooling.repositories.TripRepository;
 import mbds.car.pooling.services.AuthService;
 import mbds.car.pooling.services.GeometryFactoryService;
+import mbds.car.pooling.services.TripService;
 import mbds.car.pooling.utils.Postgis;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class TripServiceImpl {
+public class TripServiceImpl implements TripService {
 
     private final TripRepository tripRepository;
     private final GeometryFactoryService geom;
@@ -82,13 +82,13 @@ public class TripServiceImpl {
 
     @Transactional(readOnly = true)
     public List<TripResponse> listActive() {
-        return tripRepository.findByStatusOrderByCreatedAtDesc(Trip.Status.ACTIVE)
+        return tripRepository.findByStatusOrderByCreatedAtDesc(TripStatus.ACTIVE)
                 .stream().map(TripResponse::from).toList();
     }
     @Transactional
     public TripResponse close(UUID id) {
         Trip t = tripRepository.findById(id).orElseThrow();
-        t.setStatus(Trip.Status.CLOSED);
+        t.setStatus(TripStatus.CLOSED);
         Trip saved = tripRepository.save(t);
         TripResponse payload = TripResponse.from(saved);
         broker.convertAndSend("/topic/trips", new TripEvent("CLOSED", payload));
@@ -98,7 +98,7 @@ public class TripServiceImpl {
     @Transactional
     public TripResponse complete(UUID id) {
         Trip t = tripRepository.findById(id).orElseThrow();
-        t.setStatus(Trip.Status.COMPLETED);
+        t.setStatus(TripStatus.COMPLETED);
         Trip saved = tripRepository.save(t);
         TripResponse payload = TripResponse.from(saved);
         broker.convertAndSend("/topic/trips", new TripEvent("COMPLETED", payload));

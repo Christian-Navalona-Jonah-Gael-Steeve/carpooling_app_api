@@ -1,6 +1,7 @@
 package mbds.car.pooling.repositories;
 
 import mbds.car.pooling.entities.Trip;
+import mbds.car.pooling.enums.TripStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TripRepository extends JpaRepository<Trip, UUID> {
-    List<Trip> findByStatusOrderByCreatedAtDesc(Trip.Status status);
+    List<Trip> findByStatusOrderByCreatedAtDesc(TripStatus status);
 
     @Query(value = """
       WITH params AS (

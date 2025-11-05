@@ -3,6 +3,7 @@ package mbds.car.pooling.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import mbds.car.pooling.enums.RideRequestStatus;
 import org.locationtech.jts.geom.Point;
 
 
@@ -25,12 +26,11 @@ public class RideRequest {
     @JoinColumn(name = "requester_id")
     private User user;
     @Enumerated(EnumType.STRING) @Column(nullable=false)
-    private Status status = Status.PENDING;
+    private RideRequestStatus status = RideRequestStatus.PENDING;
 
     @Column(columnDefinition = "geometry(Point,4326)") private Point userStart;
     @Column(columnDefinition = "geometry(Point,4326)") private Point userEnd;
 
     private OffsetDateTime createdAt = OffsetDateTime.now();
-    public enum Status { PENDING, ACCEPTED, REJECTED }
 
 }

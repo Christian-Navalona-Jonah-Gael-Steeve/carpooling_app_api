@@ -34,7 +34,6 @@ public class TripController {
         return tripService.listActive();
     }
 
-    // fermer / terminer
     @PatchMapping("/{id}/close") public TripResponse close(@PathVariable UUID id) { return tripService.close(id); }
     @PatchMapping("/{id}/complete") public TripResponse complete(@PathVariable UUID id) { return tripService.complete(id); }
 }
