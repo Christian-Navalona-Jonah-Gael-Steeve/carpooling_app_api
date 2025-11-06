@@ -1,27 +1,15 @@
 package mbds.car.pooling.controllers;
 
 import mbds.car.pooling.services.ChatService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@RestController("/api/chat")
+@RequestMapping("/api/chat")
+@RestController
 public class ChatController {
 
     private final ChatService chatService;
 
     public ChatController(ChatService chatService) {
         this.chatService = chatService;
-    }
-
-    @GetMapping("/history/{userId1}/{userId2}")
-    public ResponseEntity<?> getChatHistory(@PathVariable  String userId1,@PathVariable String userId2) {
-        return ResponseEntity.ok(chatService.getChatHistory(userId1, userId2));
-    }
-
-    @GetMapping("/conversations/{userId}")
-    public ResponseEntity<?> getUserConversations(@PathVariable String userId) {
-        return ResponseEntity.ok(chatService.getUserConversations(userId));
     }
 }

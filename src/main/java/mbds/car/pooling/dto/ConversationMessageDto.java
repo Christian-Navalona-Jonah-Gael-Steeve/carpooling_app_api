@@ -10,10 +10,11 @@ import java.time.Instant;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class ChatMessageDto {
+@AllArgsConstructor
+public class ConversationMessageDto {
     private Long id;
+    private Long conversationId;
     private UserDto sender;
     private String content;
     private Instant sentAt;
