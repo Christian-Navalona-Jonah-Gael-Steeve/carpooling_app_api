@@ -2,6 +2,7 @@ package mbds.car.pooling.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import mbds.car.pooling.dto.CallSignalDto;
 import mbds.car.pooling.dto.ConversationUpdateDto;
 import mbds.car.pooling.dto.MessageAckDto;
 import mbds.car.pooling.dto.MessageStatusUpdateDto;
@@ -15,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * WebSocket controller for chat
@@ -165,6 +167,26 @@ public class MessageHubController {
 
         } catch (Exception e) {
             log.error("Error updating message status: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Handle call signal: Audio, Video
+     *
+     * @param signal the status update
+     */
+    @MessageMapping("/call-signal")
+    public void handleCallSignal(@Payload CallSignalDto signal) {
+        try {
+            log.info("Received call signal: {} for recipient: {}", signal.getCallType(), signal.getRecipientId());
+
+            messagingTemplate.convertAndSendToUser(
+                signal.getRecipientId(),
+                "/call-signal",
+                signal
+            );
+        } catch (Exception e) {
+            System.err.println("Failed to handle call signal: " + e.getMessage());
         }
     }
 }
