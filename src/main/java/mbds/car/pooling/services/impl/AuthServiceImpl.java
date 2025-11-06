@@ -1,14 +1,14 @@
-package mbds.car.pooling.service;
+package mbds.car.pooling.services.impl;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 
 import jakarta.transaction.Transactional;
 import mbds.car.pooling.dto.*;
 import mbds.car.pooling.entities.VerificationCode;
 import mbds.car.pooling.enums.AccountStatus;
+import mbds.car.pooling.enums.UserRole;
 import mbds.car.pooling.enums.UserRole;
 import mbds.car.pooling.repositories.UserRepository;
 import mbds.car.pooling.entities.User;
@@ -29,19 +29,20 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.*;
 
 @Service
-public class AuthService implements IAuthService {
+public class AuthServiceImpl implements AuthService {
 
     @Value("${firebase.api-key}")
     private String firebaseApiKey;
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
-    private final FirebaseAuth firebaseAuth; // Ajoutez ceci
     private final VerificationCodeRepository verificationCodeRepository;
     private final FileStorageService fileStorageService;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -57,7 +58,6 @@ public class AuthService implements IAuthService {
             CloudinaryService cloudinaryService) {
         this.firebaseApp = fire_app;
         this.userRepository = userRepository;
-        this.firebaseAuth = FirebaseAuth.getInstance(firebaseApp); // Initialisez avec l'instance configurée
         System.out.println("✅ FirebaseAuth initialisé avec l'app: " + firebaseApp.getName());
         this.verificationCodeRepository = verificationCodeRepository;
         this.fileStorageService = fileStorageService;

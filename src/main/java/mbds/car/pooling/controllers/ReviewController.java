@@ -1,10 +1,10 @@
-package mbds.car.pooling.controller;
+package mbds.car.pooling.controllers;
 
 import lombok.RequiredArgsConstructor;
 import mbds.car.pooling.dto.CreateReviewDto;
 import mbds.car.pooling.dto.UpdateReviewDto;
 import mbds.car.pooling.dto.UserRatingDto;
-import mbds.car.pooling.model.Review;
+import mbds.car.pooling.entities.Review;
 import mbds.car.pooling.service.ReviewService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

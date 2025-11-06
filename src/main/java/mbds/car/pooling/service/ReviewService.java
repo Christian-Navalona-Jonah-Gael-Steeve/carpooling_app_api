@@ -5,10 +5,10 @@ import mbds.car.pooling.dto.CreateReviewDto;
 import mbds.car.pooling.dto.UpdateReviewDto;
 import mbds.car.pooling.dto.UserRatingDto;
 import mbds.car.pooling.enums.UserRole;
-import mbds.car.pooling.model.Review;
-import mbds.car.pooling.model.User;
-import mbds.car.pooling.repository.ReviewRepository;
-import mbds.car.pooling.repository.UserRepository;
+import mbds.car.pooling.entities.Review;
+import mbds.car.pooling.entities.User;
+import mbds.car.pooling.repositories.ReviewRepository;
+import mbds.car.pooling.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;

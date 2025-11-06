@@ -1,7 +1,7 @@
-package mbds.car.pooling.repository;
+package mbds.car.pooling.repositories;
 
-import mbds.car.pooling.model.Review;
-import mbds.car.pooling.model.User;
+import mbds.car.pooling.entities.Review;
+import mbds.car.pooling.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
