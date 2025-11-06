@@ -1,0 +1,45 @@
+meta {
+  name: register
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:8080/api/auth/signup
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:form-urlencoded {
+  : 
+}
+
+body:multipart-form {
+  user: '''
+     {
+            "email": "jonahrafit.ram@hotmail.com",
+            "password": "jonah1234",
+            "firstName": "ramanantsafidy",
+            "lastName": "jonah",
+            "cinNumber": null,
+            "displayName": "ramanantsafidy jonah",
+            "phoneNumber": "+261336420666",
+            "disabled": false,
+            "roles": ["DRIVER","PASSENGER"]
+        }
+  ''' @contentType(Text)
+  photo: @file(/home/jonah/Téléchargements/LOGO.png) @contentType(File)
+}
+
+body:file {
+  ~file: @file()
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

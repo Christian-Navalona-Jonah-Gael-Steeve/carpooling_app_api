@@ -19,11 +19,14 @@ public class User {
     @Id
     private String uid;   // UID Firebase
 
+    @Column(unique = true, nullable = false)
     private String email;
+
     private String firstName;
     private String lastName;
     private String phoneNumber;
     private String cinNumber;
+    private String gender;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)

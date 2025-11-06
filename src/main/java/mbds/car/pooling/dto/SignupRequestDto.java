@@ -13,11 +13,12 @@ import java.util.List;
 public class SignupRequestDto {
     private String email;
     private String password;
+    private String confirmPassword;
     private String firstName;
     private String lastName;
+    private String gender;
     private String phoneNumber;
     private String cinNumber;
-    private String photoUrl;
     private boolean disabled = false;
     private List<UserRole> roles;
 }

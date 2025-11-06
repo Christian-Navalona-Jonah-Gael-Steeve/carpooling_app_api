@@ -6,22 +6,26 @@ meta {
 
 post {
   url: http://localhost:8080/api/auth/signup
-  body: json
+  body: multipartForm
   auth: inherit
 }
 
-body:json {
-  {
-      "email": "jonahrafit.ram@hotmail.com",
-      "password": "jonah1234",
-      "firstName": "ramanantsafidy",
-      "lastName":"jonah",
-      "cinNumber": null,
-      "displayName": "ramanantsafidy jonah",
-      "photoUrl": "https://images.pexels.com/photos/697509/pexels-photo-697509.jpeg",
-      "phoneNumber": "+261336420666",
-      "disabled": false,
-      "roles": ["DRIVER","PASSENGER"]
-  }
+body:multipart-form {
   
+  photo: @file(/home/jonah/Téléchargements/WhatsApp Image 2025-10-23 at 19.44.48.jpeg) @contentType(File)
+
+  user: '''
+    {
+        "email": "jonahrafit.ram@hotmail.com",
+        "password": "jonah1234",
+        "firstName": "ramanantsafidy",
+        "lastName": "jonah",
+        "cinNumber": null,
+        "displayName": "ramanantsafidy jonah",
+        "phoneNumber": "+261336420666",
+        "disabled": false,
+        "roles": ["DRIVER","PASSENGER"]
+    }
+  ''' @contentType(application/json)
 }
+

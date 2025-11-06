@@ -8,6 +8,10 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import java.util.Hashtable;
+
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
