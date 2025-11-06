@@ -2,6 +2,7 @@ package mbds.car.pooling.service;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 
 import mbds.car.pooling.dto.SigninRequestDto;
@@ -31,42 +32,74 @@ public class AuthService implements IAuthService {
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
+    private final FirebaseAuth firebaseAuth; // Ajoutez ceci
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public AuthService(FirebaseApp fire_app, UserRepository userRepository) {
-        this.firebaseApp = fire_app;
+    public AuthService(FirebaseApp firebaseApp, UserRepository userRepository) {
+        this.firebaseApp = firebaseApp;
         this.userRepository = userRepository;
+        this.firebaseAuth = FirebaseAuth.getInstance(firebaseApp); // Initialisez avec l'instance configurée
+        System.out.println("✅ FirebaseAuth initialisé avec l'app: " + firebaseApp.getName());
     }
 
     @Override
     public UserDto signup(SignupRequestDto request) throws Exception {
-        // 🔹 Création sur Firebase
-        UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
-                .setEmail(request.getEmail())
-                .setPassword(request.getPassword())
-                .setDisplayName(request.getFirstName() + " " + request.getLastName())
-                .setPhotoUrl(request.getPhotoUrl())
-                .setPhoneNumber(request.getPhoneNumber())
-                .setDisabled(request.isDisabled());
+        System.out.println("🔄 Début de l'inscription pour: " + request.getEmail());
 
-        UserRecord userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
+        try {
+            // 🔹 Vérification que FirebaseAuth est disponible
+            if (firebaseAuth == null) {
+                throw new IllegalStateException("FirebaseAuth n'est pas initialisé");
+            }
 
-        // 🔹 Sauvegarde dans PostgreSQL
-        User user = new User(
-                userRecord.getUid(),
-                userRecord.getEmail(),
-                request.getFirstName(),
-                request.getLastName(),
-                request.getPhoneNumber(),
-                request.getCinNumber(),
-                request.getRoles()
-        );
-        userRepository.save(user);
+            // 🔹 Création sur Firebase
+            UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
+                    .setEmail(request.getEmail())
+                    .setPassword(request.getPassword())
+                    .setDisplayName(request.getFirstName() + " " + request.getLastName())
+                    .setDisabled(request.isDisabled());
 
-        // 🔹 Ensuite connexion automatique
-        return getUserByUid(user.getUid());
+            // Ajout conditionnel des champs optionnels
+            if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
+                firebaseRequest.setPhoneNumber(request.getPhoneNumber());
+            }
+            if (request.getPhotoUrl() != null && !request.getPhotoUrl().isEmpty()) {
+                firebaseRequest.setPhotoUrl(request.getPhotoUrl());
+            }
+
+            System.out.println("🔄 Création de l'utilisateur Firebase...");
+            UserRecord userRecord = firebaseAuth.createUser(firebaseRequest);
+            System.out.println("✅ Utilisateur Firebase créé: " + userRecord.getUid());
+
+            // 🔹 Sauvegarde dans PostgreSQL
+            User user = new User(
+                    userRecord.getUid(),
+                    userRecord.getEmail(),
+                    request.getFirstName(),
+                    request.getLastName(),
+                    request.getPhoneNumber(),
+                    request.getCinNumber(),
+                    request.getRoles()
+            );
+            userRepository.save(user);
+            System.out.println("✅ Utilisateur sauvegardé en base: " + user.getUid());
+
+            return getUserByUid(user.getUid());
+
+        } catch (FirebaseAuthException e) {
+            System.err.println("❌ Erreur Firebase Auth: " + e.getMessage());
+            e.printStackTrace();
+            throw new Exception("Erreur Firebase: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("❌ Erreur générale lors de l'inscription: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
+
+    // ... le reste de votre code reste inchangé
+
 
     @Override
     public AuthResponseDto signin(SigninRequestDto request) {
