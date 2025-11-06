@@ -26,12 +26,10 @@ public class ReviewService {
             throw new IllegalArgumentException("Le rating doit être entre 0 et 5");
         }
 
-        // Vérifier que le reviewer existe
-        User reviewer = userRepository.findById(createReviewDto.getReviewerId().toString())
+        User reviewer = userRepository.findById(createReviewDto.getReviewerId())
                 .orElseThrow(() -> new RuntimeException("Utilisateur reviewer non trouvé"));
 
-        // Vérifier que le driver existe et a le rôle DRIVER
-        User driver = userRepository.findById(createReviewDto.getDriverId().toString())
+        User driver = userRepository.findById(createReviewDto.getDriverId())
                 .orElseThrow(() -> new RuntimeException("Conducteur non trouvé"));
 
         if (!driver.getRoles().contains(UserRole.DRIVER)) {

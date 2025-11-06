@@ -10,7 +10,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateReviewDto {
-    private UUID reviewerId;
-    private UUID driverId;
+    private String reviewerId;
+    private String driverId;
     private Integer rating; // 0-5
 }
