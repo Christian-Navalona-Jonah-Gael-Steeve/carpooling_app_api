@@ -1,11 +1,11 @@
 meta {
-  name: signin
+  name: verify-code
   type: http
-  seq: 3
+  seq: 6
 }
 
 post {
-  url: http://localhost:8080/api/auth/signin
+  url: http://localhost:8080/api/auth/verify-code
   body: json
   auth: inherit
 }
@@ -13,7 +13,7 @@ post {
 body:json {
   {
       "email": "jonahrafit.ram@hotmail.com",
-      "password": "jonah1234"
+      "code": "369712"
   }
   
 }

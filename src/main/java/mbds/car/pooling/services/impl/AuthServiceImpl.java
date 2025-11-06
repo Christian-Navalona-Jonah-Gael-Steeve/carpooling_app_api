@@ -4,14 +4,20 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 
-import mbds.car.pooling.dto.SigninRequestDto;
+import jakarta.transaction.Transactional;
+import mbds.car.pooling.dto.*;
+import mbds.car.pooling.entities.VerificationCode;
+import mbds.car.pooling.enums.AccountStatus;
+import mbds.car.pooling.enums.UserRole;
 import mbds.car.pooling.repositories.UserRepository;
-import mbds.car.pooling.dto.AuthResponseDto;
-import mbds.car.pooling.dto.SignupRequestDto;
-import mbds.car.pooling.dto.UserDto;
 import mbds.car.pooling.entities.User;
 
+import mbds.car.pooling.repositories.VerificationCodeRepository;
 import mbds.car.pooling.services.AuthService;
+import mbds.car.pooling.services.CloudinaryService;
+import mbds.car.pooling.services.EmailService;
+import mbds.car.pooling.services.FileStorageService;
+import mbds.car.pooling.utils.CodeGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -20,9 +26,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -32,41 +40,132 @@ public class AuthServiceImpl implements AuthService {
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
-
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final FileStorageService fileStorageService;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final EmailService emailService;
+    private final CloudinaryService cloudinaryService;
 
-    public AuthServiceImpl(FirebaseApp fire_app, UserRepository userRepository) {
+    public AuthServiceImpl(
+            FirebaseApp fire_app,
+            UserRepository userRepository,
+            VerificationCodeRepository verificationCodeRepository,
+            FileStorageService fileStorageService,
+            EmailService emailService,
+            CloudinaryService cloudinaryService) {
         this.firebaseApp = fire_app;
         this.userRepository = userRepository;
+        this.verificationCodeRepository = verificationCodeRepository;
+        this.fileStorageService = fileStorageService;
+        this.emailService = emailService;
+        this.cloudinaryService = cloudinaryService;
     }
 
+    @Transactional
     @Override
-    public UserDto signup(SignupRequestDto request) throws Exception {
-        // 🔹 Création sur Firebase
-        UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
-                .setEmail(request.getEmail())
-                .setPassword(request.getPassword())
-                .setDisplayName(request.getFirstName() + " " + request.getLastName())
-                .setPhotoUrl(request.getPhotoUrl())
-                .setPhoneNumber(request.getPhoneNumber())
-                .setDisabled(request.isDisabled());
+    public UserDto signup(SignupRequestDto request, MultipartFile photo) throws IOException {
+        try {
+            // 1️⃣ Générer un UID unique
+            String uid = UUID.randomUUID().toString();
 
-        UserRecord userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
+            // 2️⃣ Upload du fichier vers Firebase Storage
+            String photoUrl = null;
+            System.out.println(photo);
+            if (photo != null && !photo.isEmpty()) {
+                System.out.println("📂 Nom du fichier reçu: " + photo.getOriginalFilename());
+                photoUrl = cloudinaryService.uploadFile(photo, uid);
+                System.out.println("✅ Fichier uploadé sur Cloudinary: " + photoUrl);
+            }
 
-        // 🔹 Sauvegarde dans PostgreSQL
-        User user = new User(
-                userRecord.getUid(),
-                userRecord.getEmail(),
-                request.getFirstName(),
-                request.getLastName(),
-                request.getPhoneNumber(),
-                request.getCinNumber(),
-                request.getRoles()
-        );
-        userRepository.save(user);
+//            fileStorageService.saveFileMetadataInFirestore(uid, request.getEmail(), photoUrl);
+            System.out.println("✅ Utilisateur ajouté dans cloud messaging avec UID : " + uid  + "\n" + photoUrl);
 
-        // 🔹 Ensuite connexion automatique
-        return getUserByUid(user.getUid());
+            // 🔹 Étape 1 : Création Firebase
+            UserRecord userRecord;
+            try {
+                UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
+                        .setUid(uid)
+                        .setEmail(request.getEmail())
+                        .setPassword(request.getPassword())
+                        .setDisplayName(request.getFirstName() + " " + request.getLastName())
+                        .setPhotoUrl(photoUrl)
+                        .setPhoneNumber(request.getPhoneNumber())
+                        .setDisabled(true);
+
+                userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
+                System.out.println("✅ Firebase user created: " + userRecord.getUid());
+            } catch (Exception e) {
+                System.err.println("❌ Erreur Firebase: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de la création du compte Firebase." + e.getMessage());
+            }
+
+            // 🔹 Étape 2 : Sauvegarde PostgreSQL (avec mise à jour si déjà existant)
+            User user;
+            try {
+                List<UserRole> roles = request.getRoles();
+                Optional<User> existingUserOpt = userRepository.findByEmail(userRecord.getEmail());
+
+                if (existingUserOpt.isPresent()) {
+                    throw new RuntimeException("Cet email est déjà utilisé (PostgreSQL).");
+                } else {
+                    // 🆕 Nouvel utilisateur → création
+                    user = new User(
+                            userRecord.getUid(),
+                            userRecord.getEmail(),
+                            request.getFirstName(),
+                            request.getLastName(),
+                            request.getPhoneNumber(),
+                            request.getCinNumber(),
+                            request.getGender(),
+                            roles,
+                            AccountStatus.PENDING
+                    );
+                    System.out.println("✅ Nouvel utilisateur enregistré: " + user.getEmail());
+                }
+                userRepository.save(user);
+
+            } catch (Exception e) {
+                System.err.println("❌ Erreur PostgreSQL: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de l’enregistrement dans PostgreSQL.", e);
+            }
+            // 🔹 Étape 3 : Génération + sauvegarde du code
+            String code;
+            try {
+                code = CodeGenerator.generateCode();
+
+                // ✅ Supprimer tous les anciens codes pour cet email avant d’enregistrer le nouveau
+                verificationCodeRepository.deleteByEmail(request.getEmail());
+
+                VerificationCode verificationCode = new VerificationCode();
+                verificationCode.setEmail(user.getEmail());
+                verificationCode.setCode(code);
+                verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+
+                verificationCodeRepository.save(verificationCode);
+
+                System.out.println("✅ Code de vérification généré: " + code);
+            } catch (Exception e) {
+                System.err.println("❌ Erreur génération/sauvegarde code: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de la génération du code de vérification.", e);
+            }
+
+            // 🔹 Étape 4 : Envoi de mail
+            try {
+                emailService.sendVerificationCode(user.getEmail(), code);
+                System.out.println("✅ Email de vérification envoyé à " + user.getEmail());
+            } catch (Exception e) {
+                System.err.println("❌ Erreur envoi email: " + e.getMessage());
+                throw new RuntimeException("Erreur lors de l’envoi de l’email de vérification.", e);
+            }
+
+            // 🔹 Étape 5 : Retour
+            return getUserByUid(user.getUid());
+
+        } catch (Exception e) {
+            System.err.println("🚨 Erreur globale dans signup(): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
@@ -135,6 +234,78 @@ public class AuthServiceImpl implements AuthService {
         authResponseDto.setRefreshToken((String) response.get("refresh_token"));  // 🔹 nouveau refresh token
 
         return authResponseDto;
+    }
+
+    @Transactional
+    @Override
+    public VerificationResponseDto verifyCode(VerificationRequestDto request) {
+        try {
+            // 🔹 Récupérer le dernier code valide pour cet email
+            VerificationCode verificationCode = verificationCodeRepository
+                    .findTopValidByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Aucun code trouvé pour cet email."));
+
+            // 🔹 Vérifier le code
+            if (!verificationCode.getCode().equals(request.getCode())) {
+                return new VerificationResponseDto(false, "❌ Code incorrect");
+            }
+
+            // 🔹 Vérifier l'expiration
+            if (verificationCode.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return new VerificationResponseDto(false, "⏰ Code expiré");
+            }
+
+            // 🔹 Récupérer l'utilisateur
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+
+            // 🔹 Activer l'utilisateur
+            user.setStatus(AccountStatus.ACTIVE);
+            userRepository.save(user);
+
+            // 🔹 Activer dans Firebase
+            FirebaseAuth.getInstance().updateUser(
+                    new UserRecord.UpdateRequest(user.getUid()).setDisabled(false)
+            );
+
+            // 🔹 Supprimer tous les codes existants pour cet email
+            verificationCodeRepository.deleteByEmail(request.getEmail());
+            return new VerificationResponseDto(true, "✅ Compte activé avec succès !");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new VerificationResponseDto(false,
+                    "🚨 Erreur lors de la vérification du code : " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    @Override
+    public VerificationResponseDto resendVerificationCode(ResendCodeRequestDto request) {
+        try {
+            // 🔹 Vérifier que l'utilisateur existe
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+
+            // 🔹 Supprimer tous les anciens codes
+            verificationCodeRepository.deleteByEmail(user.getEmail());
+
+            // 🔹 Générer un nouveau code
+            String code = CodeGenerator.generateCode();
+
+            VerificationCode verificationCode = new VerificationCode();
+            verificationCode.setEmail(user.getEmail());
+            verificationCode.setCode(code);
+            verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            verificationCodeRepository.save(verificationCode);
+
+            // 🔹 Envoyer par email
+            emailService.sendVerificationCode(user.getEmail(), code);
+
+            return new VerificationResponseDto(true, "✅ Nouveau code de vérification envoyé !");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new VerificationResponseDto(false, "🚨 Erreur lors de l’envoi du code : " + e.getMessage());
+        }
     }
 
 }
