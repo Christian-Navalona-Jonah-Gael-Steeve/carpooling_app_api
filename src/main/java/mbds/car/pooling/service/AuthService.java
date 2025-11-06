@@ -10,6 +10,7 @@ import mbds.car.pooling.repository.UserRepository;
 import mbds.car.pooling.dto.AuthResponseDto;
 import mbds.car.pooling.dto.SignupRequestDto;
 import mbds.car.pooling.dto.UserDto;
+import mbds.car.pooling.enums.UserRole;
 import mbds.car.pooling.model.User;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +22,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService implements IAuthService {
@@ -32,14 +36,14 @@ public class AuthService implements IAuthService {
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
-    private final FirebaseAuth firebaseAuth; // Ajoutez ceci
+    private final FirebaseAuth firebaseAuth;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     public AuthService(FirebaseApp firebaseApp, UserRepository userRepository) {
         this.firebaseApp = firebaseApp;
         this.userRepository = userRepository;
-        this.firebaseAuth = FirebaseAuth.getInstance(firebaseApp); // Initialisez avec l'instance configurée
+        this.firebaseAuth = FirebaseAuth.getInstance(firebaseApp);
         System.out.println("✅ FirebaseAuth initialisé avec l'app: " + firebaseApp.getName());
     }
 
@@ -48,19 +52,15 @@ public class AuthService implements IAuthService {
         System.out.println("🔄 Début de l'inscription pour: " + request.getEmail());
 
         try {
-            // 🔹 Vérification que FirebaseAuth est disponible
             if (firebaseAuth == null) {
                 throw new IllegalStateException("FirebaseAuth n'est pas initialisé");
             }
 
-            // 🔹 Création sur Firebase
             UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
                     .setEmail(request.getEmail())
                     .setPassword(request.getPassword())
-                    .setDisplayName(request.getFirstName() + " " + request.getLastName())
-                    .setDisabled(request.isDisabled());
+                    .setDisplayName(request.getFirstName() + " " + request.getLastName());
 
-            // Ajout conditionnel des champs optionnels
             if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
                 firebaseRequest.setPhoneNumber(request.getPhoneNumber());
             }
@@ -72,16 +72,20 @@ public class AuthService implements IAuthService {
             UserRecord userRecord = firebaseAuth.createUser(firebaseRequest);
             System.out.println("✅ Utilisateur Firebase créé: " + userRecord.getUid());
 
-            // 🔹 Sauvegarde dans PostgreSQL
-            User user = new User(
-                    userRecord.getUid(),
-                    userRecord.getEmail(),
-                    request.getFirstName(),
-                    request.getLastName(),
-                    request.getPhoneNumber(),
-                    request.getCinNumber(),
-                    request.getRoles()
-            );
+            // ✅ Les rôles sont déjà de type List<UserRole> (grâce à Jackson + enum)
+            List<UserRole> roles = request.getRoles() != null
+                    ? new ArrayList<>(request.getRoles())
+                    : new ArrayList<>();
+
+            User user = new User();
+            user.setUid(userRecord.getUid());
+            user.setEmail(userRecord.getEmail());
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setCinNumber(request.getCinNumber());
+            user.setRoles(roles);
+
             userRepository.save(user);
             System.out.println("✅ Utilisateur sauvegardé en base: " + user.getUid());
 
@@ -89,20 +93,16 @@ public class AuthService implements IAuthService {
 
         } catch (FirebaseAuthException e) {
             System.err.println("❌ Erreur Firebase Auth: " + e.getMessage());
-            e.printStackTrace();
-            throw new Exception("Erreur Firebase: " + e.getMessage());
+            throw new Exception("Erreur Firebase: " + e.getMessage(), e);
         } catch (Exception e) {
             System.err.println("❌ Erreur générale lors de l'inscription: " + e.getMessage());
-            e.printStackTrace();
             throw e;
         }
     }
 
-    // ... le reste de votre code reste inchangé
-
-
     @Override
     public AuthResponseDto signin(SigninRequestDto request) {
+        // 🔸 CORRIGÉ : suppression de l'espace dans l'URL
         String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + firebaseApiKey;
 
         Map<String, Object> body = new HashMap<>();
@@ -117,8 +117,8 @@ public class AuthService implements IAuthService {
         }
 
         AuthResponseDto authResponseDto = new AuthResponseDto();
-        authResponseDto.setAccessToken((String) response.get("idToken"));       // 🔹 token d’accès
-        authResponseDto.setRefreshToken((String) response.get("refreshToken")); // 🔹 refresh token
+        authResponseDto.setAccessToken((String) response.get("idToken"));
+        authResponseDto.setRefreshToken((String) response.get("refreshToken"));
 
         return authResponseDto;
     }
@@ -134,7 +134,7 @@ public class AuthService implements IAuthService {
                     dto.setLastName(user.getLastName());
                     dto.setPhoneNumber(user.getPhoneNumber());
                     dto.setCinNumber(user.getCinNumber());
-                    dto.setRoles(user.getRoles());
+                    dto.setRoles(new ArrayList<>(user.getRoles())); // ✅ Direct copy
                     return dto;
                 })
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
@@ -163,10 +163,9 @@ public class AuthService implements IAuthService {
         }
 
         AuthResponseDto authResponseDto = new AuthResponseDto();
-        authResponseDto.setAccessToken((String) response.get("id_token"));        // 🔹 nouveau token d’accès
-        authResponseDto.setRefreshToken((String) response.get("refresh_token"));  // 🔹 nouveau refresh token
+        authResponseDto.setAccessToken((String) response.get("id_token"));
+        authResponseDto.setRefreshToken((String) response.get("refresh_token"));
 
         return authResponseDto;
     }
-
 }
