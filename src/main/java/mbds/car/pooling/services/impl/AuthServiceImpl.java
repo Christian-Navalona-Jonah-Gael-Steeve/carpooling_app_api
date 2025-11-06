@@ -1,7 +1,8 @@
-package mbds.car.pooling.services.impl;
+package mbds.car.pooling.service;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 
 import jakarta.transaction.Transactional;
@@ -33,13 +34,14 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class AuthServiceImpl implements AuthService {
+public class AuthService implements IAuthService {
 
     @Value("${firebase.api-key}")
     private String firebaseApiKey;
 
     private final FirebaseApp firebaseApp;
     private final UserRepository userRepository;
+    private final FirebaseAuth firebaseAuth; // Ajoutez ceci
     private final VerificationCodeRepository verificationCodeRepository;
     private final FileStorageService fileStorageService;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -55,6 +57,8 @@ public class AuthServiceImpl implements AuthService {
             CloudinaryService cloudinaryService) {
         this.firebaseApp = fire_app;
         this.userRepository = userRepository;
+        this.firebaseAuth = FirebaseAuth.getInstance(firebaseApp); // Initialisez avec l'instance configurée
+        System.out.println("✅ FirebaseAuth initialisé avec l'app: " + firebaseApp.getName());
         this.verificationCodeRepository = verificationCodeRepository;
         this.fileStorageService = fileStorageService;
         this.emailService = emailService;
