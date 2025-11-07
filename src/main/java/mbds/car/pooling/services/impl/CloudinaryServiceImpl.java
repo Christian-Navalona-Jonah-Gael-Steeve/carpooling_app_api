@@ -26,5 +26,19 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 ObjectUtils.asMap("public_id", publicId));
         return (String) uploadResult.get("secure_url");
     }
+    public void deleteFile(String fileUrl) {
+        try {
+            // Extraire le public_id à partir de l'URL
+            // Exemple URL: https://res.cloudinary.com/TON_CLOUD_NAME/image/upload/v123456/users/mon_fichier.jpg
+            String[] parts = fileUrl.split("/");
+            String filename = parts[parts.length - 1]; // mon_fichier.jpg
+            String publicId = "users/" + filename.substring(0, filename.lastIndexOf('.'));
+
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            System.out.println("✅ Fichier Cloudinary supprimé: " + publicId);
+        } catch (Exception e) {
+            System.err.println("❌ Impossible de supprimer le fichier Cloudinary: " + e.getMessage());
+        }
+    }
 }
 

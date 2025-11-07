@@ -19,6 +19,9 @@ public class SignupRequestDto {
     private String gender;
     private String phoneNumber;
     private String cinNumber;
+    private String city;
+    private String codePostal;
+    private String address;
     private boolean disabled = false;
-    private List<UserRole> roles;
+    private String userType;  // ou enum UserType si tu préfères
 }

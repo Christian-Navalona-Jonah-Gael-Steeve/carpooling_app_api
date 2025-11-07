@@ -27,6 +27,10 @@ public class User {
     private String phoneNumber;
     private String cinNumber;
     private String gender;
+    private String justificatifUrl;
+    private String city;
+    private String codePostal;
+    private String address;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)

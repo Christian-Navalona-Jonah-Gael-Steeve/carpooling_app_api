@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public interface AuthService {
 
-    UserDto signup(SignupRequestDto request, MultipartFile photo) throws IOException;
+    UserDto signup(SignupRequestDto request, MultipartFile justificatif, MultipartFile pdp) throws IOException;
 
     AuthResponseDto signin(SigninRequestDto request);
 
