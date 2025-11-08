@@ -1,5 +1,7 @@
 package mbds.car.pooling.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import lombok.Data;
@@ -37,9 +39,11 @@ public class User {
     private List<UserRole> roles;
 
     @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Review> receivedReviews;
 
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Review> givenReviews;
 
     @Column(nullable = false)
