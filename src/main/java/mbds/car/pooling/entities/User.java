@@ -64,5 +64,4 @@ public class User {
         this.roles = roles;
         this.status = status;
     }
-
 }
