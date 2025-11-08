@@ -1,0 +1,45 @@
+-- User 1
+-- UUID: 8eKmKCKEWJOEqjOnGESdXEfEo132
+
+-- User 2
+-- UUID: vdIR58ZCvVWdheagow6LNIAQGQS2
+
+-- Create 1:1 conversation between User 1 and User 2
+INSERT INTO conversations (id, type, group_name, created_at, updated_at, last_message_at) VALUES
+(1, 'ONE_TO_ONE', NULL, '2025-01-22 08:30:00', '2025-01-22 10:00:01', '2025-01-22 10:00:01')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link participants to the conversation
+INSERT INTO conversation_participants (conversation_id, user_uid) VALUES
+(1, '8eKmKCKEWJOEqjOnGESdXEfEo132'),
+(1, 'vdIR58ZCvVWdheagow6LNIAQGQS2')
+ON CONFLICT (conversation_id, user_uid) DO NOTHING;
+
+-- Initial chat messages between User 1 and User 2
+-- Using specific IDs and INSERT IGNORE to avoid duplications on restart
+INSERT INTO chat_messages (id, conversation_id, sender_uid, content, sent_at, delivered_at, read_at, status) VALUES
+-- User 1 sends first message to User 2
+(1, 1, '8eKmKCKEWJOEqjOnGESdXEfEo132', 'Salut ! Je vois que tu proposes un covoiturage vers Antananarivo demain. Y a-t-il encore de la place ?', '2025-01-22 08:30:00', '2025-01-22 08:30:05', '2025-01-22 08:32:00', 'READ'),
+
+-- User 2 replies to User 1
+(2, 1, 'vdIR58ZCvVWdheagow6LNIAQGQS2', 'Bonjour ! Oui il reste encore 2 places. Le départ est prévu à 7h du matin depuis Antsirabe. Ça te convient ?', '2025-01-22 08:35:00', '2025-01-22 08:35:02', '2025-01-22 08:37:00', 'READ'),
+
+-- User 1 confirms interest
+(3, 1, '8eKmKCKEWJOEqjOnGESdXEfEo132', 'Parfait ! 7h ça me va très bien. Quel est le tarif pour le trajet ?', '2025-01-22 08:40:00', '2025-01-22 08:40:03', '2025-01-22 08:42:00', 'READ'),
+
+-- User 2 provides details
+(4, 1, 'vdIR58ZCvVWdheagow6LNIAQGQS2', 'Le tarif est de 15 000 Ar par personne. Le trajet dure environ 3h. Tu peux m''envoyer ton numéro pour que je te contacte si besoin ?', '2025-01-22 08:45:00', '2025-01-22 08:45:01', '2025-01-22 08:47:00', 'READ'),
+
+-- User 1 shares contact and confirms
+(5, 1, '8eKmKCKEWJOEqjOnGESdXEfEo132', 'Mon numéro : 032 12 345 67. Je confirme ma réservation pour demain 7h. Où exactement est le point de rencontre à Antsirabe ?', '2025-01-22 08:50:00', '2025-01-22 08:50:04', '2025-01-22 08:52:00', 'READ'),
+
+-- User 2 provides meeting point
+(6, 1, 'vdIR58ZCvVWdheagow6LNIAQGQS2', 'Super ! Le point de rencontre est devant la gare routière d''Antsirabe. Je conduise une Toyota Corolla blanche, immatriculation 1234 TAA. À demain !', '2025-01-22 08:55:00', '2025-01-22 08:55:02', '2025-01-22 08:57:00', 'READ'),
+
+-- User 1 final confirmation
+(7, 1, '8eKmKCKEWJOEqjOnGESdXEfEo132', 'Parfait, j''ai noté toutes les infos. À demain 7h devant la gare routière. Merci !', '2025-01-22 09:00:00', '2025-01-22 09:00:01', '2025-01-22 09:02:00', 'READ'),
+
+-- Recent unread message from User 2
+(8, 1, 'vdIR58ZCvVWdheagow6LNIAQGQS2', 'Salut ! J''espère que le voyage s''est bien passé hier. J''organise un autre covoiturage vendredi vers Fianarantsoa, ça t''intéresse ?', '2025-01-22 10:00:00', '2025-01-22 10:00:01', NULL, 'DELIVERED')
+
+ON CONFLICT (id) DO NOTHING;
