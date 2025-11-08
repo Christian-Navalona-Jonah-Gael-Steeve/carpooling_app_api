@@ -5,14 +5,11 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/api/auth/test-mail
+  url: http://localhost:8080/api/auth/test-mail?email=jonahrafit.ram@hotmail.com
   body: json
   auth: inherit
 }
 
-body:json {
-  {
-      "email": "jonahrafit.ram@hotmail.com"
-  }
-  
+params:query {
+  email: jonahrafit.ram@hotmail.com
 }

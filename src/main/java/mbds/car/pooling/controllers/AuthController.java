@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import mbds.car.pooling.services.AuthService;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -41,11 +42,12 @@ public class AuthController {
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> signup(
             @RequestPart("user") String userJson,
-            @RequestPart(value = "photo", required = false) MultipartFile photo) {
+            @RequestPart(value = "justificatif", required = false) MultipartFile justificatif,
+            @RequestPart(value = "pdp", required = false) MultipartFile pdp) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             SignupRequestDto request = mapper.readValue(userJson, SignupRequestDto.class);
-            UserDto response = authService.signup(request, photo);
+            UserDto response = authService.signup(request, justificatif, pdp);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
@@ -90,5 +92,17 @@ public class AuthController {
         return authService.resendVerificationCode(request);
     }
 
+    @PostMapping("/test-mail")
+    public ResponseEntity<?> verifyEmail(@RequestParam String email) {
+        try {
+            String apiUrl = "https://api.eva.pingutil.com/email?email=" + email;
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<Map> response = restTemplate.getForEntity(apiUrl, Map.class);
+            return ResponseEntity.ok(response.getBody());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Impossible de vérifier l'adresse email", "details", e.getMessage()));
+        }
+    }
 
 }

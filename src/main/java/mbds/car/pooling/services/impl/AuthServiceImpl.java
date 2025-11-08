@@ -63,24 +63,40 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional
     @Override
-    public UserDto signup(SignupRequestDto request, MultipartFile photo) throws IOException {
+    public UserDto signup(SignupRequestDto request, MultipartFile justificatif, MultipartFile pdp) throws IOException {
+        String uid = UUID.randomUUID().toString();
+        String photoUrl = null;
+        String justificatifUrl = null;
+        boolean firebaseCreated = false;
         try {
-            // 1️⃣ Générer un UID unique
-            String uid = UUID.randomUUID().toString();
-
-            // 2️⃣ Upload du fichier vers Firebase Storage
-            String photoUrl = null;
-            System.out.println(photo);
-            if (photo != null && !photo.isEmpty()) {
-                System.out.println("📂 Nom du fichier reçu: " + photo.getOriginalFilename());
-                photoUrl = cloudinaryService.uploadFile(photo, uid);
-                System.out.println("✅ Fichier uploadé sur Cloudinary: " + photoUrl);
+            // -----------------------------
+            // 1️⃣ Validation préalable
+            // -----------------------------
+            if (request.getEmail() == null || request.getEmail().isBlank()) {
+                throw new RuntimeException("Email obligatoire");
+            }
+            if (request.getPassword() == null || request.getPassword().length() < 6) {
+                throw new RuntimeException("Mot de passe invalide");
+            }
+            if (request.getUserType() == null) {
+                throw new RuntimeException("userType obligatoire");
             }
 
-//            fileStorageService.saveFileMetadataInFirestore(uid, request.getEmail(), photoUrl);
-            System.out.println("✅ Utilisateur ajouté dans cloud messaging avec UID : " + uid  + "\n" + photoUrl);
+            // -----------------------------
+            // 2️⃣ Upload fichiers sur Cloudinary
+            // -----------------------------
+            if (justificatif != null && !justificatif.isEmpty()) {
+                justificatifUrl = cloudinaryService.uploadFile(justificatif, uid);
+                System.out.println("✅ Justificatif uploadé: " + justificatifUrl);
+            }
+            if (pdp != null && !pdp.isEmpty()) {
+                photoUrl = cloudinaryService.uploadFile(pdp, uid);
+                System.out.println("✅ Photo de profil uploadée: " + photoUrl);
+            }
 
-            // 🔹 Étape 1 : Création Firebase
+            // -----------------------------
+            // 3️⃣ Création Firebase
+            // -----------------------------
             UserRecord userRecord;
             try {
                 UserRecord.CreateRequest firebaseRequest = new UserRecord.CreateRequest()
@@ -91,80 +107,88 @@ public class AuthServiceImpl implements AuthService {
                         .setPhotoUrl(photoUrl)
                         .setPhoneNumber(request.getPhoneNumber())
                         .setDisabled(true);
-
                 userRecord = FirebaseAuth.getInstance().createUser(firebaseRequest);
-                System.out.println("✅ Firebase user created: " + userRecord.getUid());
+                firebaseCreated = true;
+                System.out.println("✅ Firebase user créé: " + userRecord.getUid());
             } catch (Exception e) {
-                System.err.println("❌ Erreur Firebase: " + e.getMessage());
-                throw new RuntimeException("Erreur lors de la création du compte Firebase." + e.getMessage());
+                throw new RuntimeException("Erreur création compte Firebase: " + e.getMessage(), e);
             }
 
-            // 🔹 Étape 2 : Sauvegarde PostgreSQL (avec mise à jour si déjà existant)
-            User user;
-            try {
-                List<UserRole> roles = request.getRoles();
-                Optional<User> existingUserOpt = userRepository.findByEmail(userRecord.getEmail());
-
-                if (existingUserOpt.isPresent()) {
-                    throw new RuntimeException("Cet email est déjà utilisé (PostgreSQL).");
-                } else {
-                    // 🆕 Nouvel utilisateur → création
-                    user = new User(
-                            userRecord.getUid(),
-                            userRecord.getEmail(),
-                            request.getFirstName(),
-                            request.getLastName(),
-                            request.getPhoneNumber(),
-                            request.getCinNumber(),
-                            request.getGender(),
-                            roles,
-                            AccountStatus.PENDING
-                    );
-                    System.out.println("✅ Nouvel utilisateur enregistré: " + user.getEmail());
-                }
-                userRepository.save(user);
-
-            } catch (Exception e) {
-                System.err.println("❌ Erreur PostgreSQL: " + e.getMessage());
-                throw new RuntimeException("Erreur lors de l’enregistrement dans PostgreSQL.", e);
-            }
-            // 🔹 Étape 3 : Génération + sauvegarde du code
-            String code;
-            try {
-                code = CodeGenerator.generateCode();
-
-                // ✅ Supprimer tous les anciens codes pour cet email avant d’enregistrer le nouveau
-                verificationCodeRepository.deleteByEmail(request.getEmail());
-
-                VerificationCode verificationCode = new VerificationCode();
-                verificationCode.setEmail(user.getEmail());
-                verificationCode.setCode(code);
-                verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
-
-                verificationCodeRepository.save(verificationCode);
-
-                System.out.println("✅ Code de vérification généré: " + code);
-            } catch (Exception e) {
-                System.err.println("❌ Erreur génération/sauvegarde code: " + e.getMessage());
-                throw new RuntimeException("Erreur lors de la génération du code de vérification.", e);
+            // -----------------------------
+            // 4️⃣ Enregistrement PostgreSQL
+            // -----------------------------
+            List<UserRole> roles = new ArrayList<>();
+            if ("DRIVER".equalsIgnoreCase(request.getUserType())) {
+                roles.add(UserRole.DRIVER);
+            } else {
+                roles.add(UserRole.PASSENGER);
             }
 
-            // 🔹 Étape 4 : Envoi de mail
-            try {
-                emailService.sendVerificationCode(user.getEmail(), code);
-                System.out.println("✅ Email de vérification envoyé à " + user.getEmail());
-            } catch (Exception e) {
-                System.err.println("❌ Erreur envoi email: " + e.getMessage());
-                throw new RuntimeException("Erreur lors de l’envoi de l’email de vérification.", e);
-            }
+            User user = new User(
+                    userRecord.getUid(),
+                    userRecord.getEmail(),
+                    request.getFirstName(),
+                    request.getLastName(),
+                    request.getPhoneNumber(),
+                    request.getCinNumber(),
+                    request.getGender(),
+                    justificatifUrl,
+                    request.getCity(),
+                    request.getCodePostal(),
+                    request.getAddress(),
+                    roles,
+                    AccountStatus.PENDING
+            );
+            userRepository.save(user);
+            System.out.println("✅ Utilisateur PostgreSQL enregistré: " + user.getEmail());
 
-            // 🔹 Étape 5 : Retour
+            // -----------------------------
+            // 5️⃣ Génération + sauvegarde code de vérification
+            // -----------------------------
+            String code = CodeGenerator.generateCode();
+            verificationCodeRepository.deleteByEmail(user.getEmail());
+            VerificationCode verificationCode = new VerificationCode();
+            verificationCode.setEmail(user.getEmail());
+            verificationCode.setCode(code);
+            verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            verificationCodeRepository.save(verificationCode);
+            System.out.println("✅ Code vérification généré: " + code);
+
+            // -----------------------------
+            // 6️⃣ Envoi email de vérification
+            // -----------------------------
+            emailService.sendVerificationCode(user.getEmail(), code);
+            System.out.println("✅ Email envoyé: " + user.getEmail());
+
+            // -----------------------------
+            // 7️⃣ Retour DTO utilisateur
+            // -----------------------------
             return getUserByUid(user.getUid());
 
         } catch (Exception e) {
-            System.err.println("🚨 Erreur globale dans signup(): " + e.getMessage());
+            System.err.println("🚨 Erreur signup(): " + e.getMessage());
             e.printStackTrace();
-            throw e;
+
+            // -----------------------------
+            // 🔄 Rollback Firebase et Cloudinary si nécessaire
+            // -----------------------------
+            if (firebaseCreated) {
+                try {
+                    FirebaseAuth.getInstance().deleteUser(uid);
+                    System.out.println("↩️ Rollback Firebase effectué pour UID: " + uid);
+                } catch (Exception ex) {
+                    System.err.println("❌ Erreur rollback Firebase: " + ex.getMessage());
+                }
+            }
+            // Supprimer fichiers uploadés sur Cloudinary si besoin
+            if (photoUrl != null) {
+                cloudinaryService.deleteFile(photoUrl);
+            }
+            if (justificatifUrl != null) {
+                cloudinaryService.deleteFile(justificatifUrl);
+            }
+
+            throw e; // on relance l’exception pour que Spring rollback PostgreSQL
         }
     }
 
