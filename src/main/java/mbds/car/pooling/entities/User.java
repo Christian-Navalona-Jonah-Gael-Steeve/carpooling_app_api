@@ -46,4 +46,23 @@ public class User {
     @Enumerated(EnumType.STRING)
     private AccountStatus status = AccountStatus.PENDING;
 
+    public User(String uid, String email, String firstName, String lastName,
+                String phoneNumber, String cinNumber, String gender,
+                String justificatifUrl, String city, String codePostal, String address,
+                List<UserRole> roles, AccountStatus status) {
+        this.uid = uid;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phoneNumber = phoneNumber;
+        this.cinNumber = cinNumber;
+        this.gender = gender;
+        this.justificatifUrl = justificatifUrl;
+        this.city = city;
+        this.codePostal = codePostal;
+        this.address = address;
+        this.roles = roles;
+        this.status = status;
+    }
+
 }
