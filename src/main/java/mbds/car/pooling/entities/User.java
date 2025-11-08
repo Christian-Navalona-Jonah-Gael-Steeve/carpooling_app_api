@@ -36,6 +36,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     private List<UserRole> roles;
 
+    @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Review> receivedReviews;
+
+    @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Review> givenReviews;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountStatus status = AccountStatus.PENDING;
