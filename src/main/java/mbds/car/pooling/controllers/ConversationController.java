@@ -53,4 +53,25 @@ public class ConversationController {
         List<ConversationMessageDto> messages = conversationService.getConversationMessages(conversationId, page, size);
         return ResponseEntity.ok(messages);
     }
+
+    /**
+     * Find existing conversation between current user and another user
+     *
+     * @param auth
+     * @param otherUserId
+     * @return
+     */
+    @GetMapping("/with/{otherUserId}")
+    public ResponseEntity<ConversationListItemDto> findConversationWith(
+            Authentication auth,
+            @PathVariable String otherUserId) {
+        String userId = auth.getName(); // UID from FirebaseTokenFilter
+        ConversationListItemDto conversation = conversationService.findConversationBetweenUsers(userId, otherUserId);
+
+        if (conversation == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(conversation);
+    }
 }

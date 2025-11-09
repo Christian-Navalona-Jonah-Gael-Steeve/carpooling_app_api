@@ -113,4 +113,37 @@ public class ConversationServiceImpl implements ConversationService {
             .map(conversationMapper::toConversationMessageDto)
             .collect(Collectors.toList());
     }
+
+    @Override
+    public ConversationListItemDto findConversationBetweenUsers(String userId1, String userId2) {
+        return conversationRepository.findOneToOneConversation(userId1, userId2)
+            .map(conversation -> {
+                ChatMessage latestMessage = chatMessageRepository
+                    .findLatestMessagesByConversationIds(List.of(conversation.getId()))
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+                Long unreadCount = conversationRepository.countUnreadMessages(conversation.getId(), userId1);
+
+                List<UserDto> participantDtos = conversation.getParticipants().stream()
+                    .map(userMapper::toDto)
+                    .collect(Collectors.toList());
+
+                ChatMessageDto lastMessageDto = latestMessage != null
+                    ? chatMessageMapper.toDto(latestMessage)
+                    : null;
+
+                return ConversationListItemDto.builder()
+                    .conversationId(conversation.getId())
+                    .type(conversation.getType())
+                    .groupName(conversation.getGroupName())
+                    .participants(participantDtos)
+                    .lastMessage(lastMessageDto)
+                    .unreadCount(unreadCount)
+                    .lastMessageAt(conversation.getLastMessageAt())
+                    .build();
+            })
+            .orElse(null);
+    }
 }
