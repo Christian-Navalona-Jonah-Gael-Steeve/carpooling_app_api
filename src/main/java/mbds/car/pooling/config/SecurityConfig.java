@@ -24,15 +24,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/signup", "/api/auth/signin", "/api/auth/refresh", "/api/auth/verify-code","/api/auth/resend-code", "/api/auth/test-mail","/api/reviews/**").permitAll()
-                .requestMatchers("/ws/**").permitAll()
-                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html", "/api-docs/**", "/v3/api-docs/**", "/webjars/**").permitAll()
-                .anyRequest().authenticated())
-            .addFilterBefore(new FirebaseTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/signup", "/api/auth/signin", "/api/auth/refresh", "/api/auth/verify-code", "/api/auth/resend-code", "/api/auth/test-mail", "/api/auth/reset-password-code", "/api/auth/forgot-password").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html", "/api-docs/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(new FirebaseTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

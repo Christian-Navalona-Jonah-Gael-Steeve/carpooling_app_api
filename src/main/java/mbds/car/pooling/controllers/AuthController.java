@@ -26,18 +26,6 @@ public class AuthController {
     private final AuthService authService;
 
     private final EmailService emailService;
-//    @PostMapping(value = "/signup", consumes = {"multipart/form-data"})
-//    public ResponseEntity<?> signup(
-//            @RequestPart("user") SignupRequestDto request,
-//            @RequestPart(value = "photo", required = false) MultipartFile photo) {
-//        try {
-//            UserDto response = authService.signup(request, photo);
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
 
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> signup(
@@ -105,4 +93,27 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email");
+            authService.sendReinitialisationCode(email);
+            return ResponseEntity.ok("Code envoyé avec succès !");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password-code")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email");
+            String code = body.get("code");
+            String newPassword = body.get("newPassword");
+            authService.resetPassword(email, code, newPassword);
+            return ResponseEntity.ok("Mot de passe réinitialisé avec succès !");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

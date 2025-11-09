@@ -2,6 +2,7 @@ package mbds.car.pooling.services.impl;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 
 import jakarta.transaction.Transactional;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -48,6 +50,8 @@ public class AuthServiceImpl implements AuthService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final EmailService emailService;
     private final CloudinaryService cloudinaryService;
+
+    private final ConcurrentHashMap<String, String> resetCodes = new ConcurrentHashMap<>();
 
     public AuthServiceImpl(
             FirebaseApp fire_app,
@@ -161,7 +165,7 @@ public class AuthServiceImpl implements AuthService {
             // -----------------------------
             // 6️⃣ Envoi email de vérification
             // -----------------------------
-            emailService.sendVerificationCode(user.getEmail(), code);
+            emailService.sendVerificationCodeHtml(user.getEmail(), code);
             System.out.println("✅ Email envoyé: " + user.getEmail());
 
             // -----------------------------
@@ -327,7 +331,7 @@ public class AuthServiceImpl implements AuthService {
             verificationCodeRepository.save(verificationCode);
 
             // 🔹 Envoyer par email
-            emailService.sendVerificationCode(user.getEmail(), code);
+            emailService.sendVerificationCodeHtml(user.getEmail(), code);
 
             return new VerificationResponseDto(true, "✅ Nouveau code de vérification envoyé !");
         } catch (Exception e) {
@@ -336,4 +340,36 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    public void resetPassword(String email, String code, String newPassword) throws Exception {
+        String storedCode = resetCodes.get(email);
+        System.out.println(storedCode);
+        if (storedCode == null || !storedCode.equals(code)) {
+            throw new Exception("Code de réinitialisation invalide ou expiré.");
+        }
+
+        // Met à jour le mot de passe dans Firebase
+        UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
+        FirebaseAuth.getInstance().updateUser(
+                new UserRecord.UpdateRequest(userRecord.getUid())
+                        .setPassword(newPassword)
+        );
+
+        // Supprime le code après utilisation
+        resetCodes.remove(email);
+    }
+
+    public void sendReinitialisationCode(String to) throws Exception {
+        // Vérifie si l'utilisateur existe dans Firebase
+        UserRecord user = FirebaseAuth.getInstance().getUserByEmail(to);
+        if (user == null) {
+            throw new Exception("Aucun compte associé à cet email.");
+        }
+        // Génère le code
+        String code = String.format("%06d", new Random().nextInt(999999));
+
+        System.out.println("---" + code);
+        System.out.println("---" +  to);
+        resetCodes.put(to, code);
+        emailService.sendReinitialisationCodeHtml(to, code);
+    }
 }
