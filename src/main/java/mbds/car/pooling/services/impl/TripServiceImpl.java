@@ -39,6 +39,12 @@ public class TripServiceImpl {
         User driver = new User();
         driver.setUid(driverDto.getUid());
         driver.setEmail(driverDto.getEmail());
+        try {
+            driver.setFirstName(driverDto.getFirstName());
+        } catch (Exception ignored) {}
+        try {
+            driver.setLastName(driverDto.getLastName());
+        } catch (Exception ignored) {}
 
         Trip t = new Trip();
         t.setDriver(driver);
