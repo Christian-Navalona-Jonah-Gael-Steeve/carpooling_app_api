@@ -1,5 +1,6 @@
 package mbds.car.pooling.services;
 
+import com.google.firebase.auth.FirebaseAuthException;
 import mbds.car.pooling.dto.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,4 +19,7 @@ public interface AuthService {
     VerificationResponseDto verifyCode(VerificationRequestDto request);
 
     VerificationResponseDto resendVerificationCode(ResendCodeRequestDto request);
+
+    void resetPassword(String email, String code, String newPassword) throws Exception;
+    void sendReinitialisationCode(String to) throws Exception;
 }
