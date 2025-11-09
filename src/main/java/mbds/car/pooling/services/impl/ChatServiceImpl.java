@@ -24,12 +24,17 @@ import java.util.Set;
  */
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
+
+    public ChatServiceImpl(ChatMessageRepository chatMessageRepository, ConversationRepository conversationRepository, UserRepository userRepository) {
+        this.chatMessageRepository = chatMessageRepository;
+        this.conversationRepository = conversationRepository;
+        this.userRepository = userRepository;
+    }
 
     @Override
     @Transactional

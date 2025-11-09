@@ -10,6 +10,7 @@ import mbds.car.pooling.dto.*;
 import mbds.car.pooling.entities.VerificationCode;
 import mbds.car.pooling.enums.AccountStatus;
 import mbds.car.pooling.enums.UserRole;
+import mbds.car.pooling.enums.UserRole;
 import mbds.car.pooling.repositories.UserRepository;
 import mbds.car.pooling.entities.User;
 
@@ -29,8 +30,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
             CloudinaryService cloudinaryService) {
         this.firebaseApp = fire_app;
         this.userRepository = userRepository;
+        System.out.println("✅ FirebaseAuth initialisé avec l'app: " + firebaseApp.getName());
         this.verificationCodeRepository = verificationCodeRepository;
         this.fileStorageService = fileStorageService;
         this.emailService = emailService;
