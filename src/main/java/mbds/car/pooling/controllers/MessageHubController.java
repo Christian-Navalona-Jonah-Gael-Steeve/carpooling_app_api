@@ -173,20 +173,23 @@ public class MessageHubController {
     /**
      * Handle call signal: Audio, Video
      *
-     * @param signal the status update
+     * @param signal the call signal
      */
     @MessageMapping("/call-signal")
     public void handleCallSignal(@Payload CallSignalDto signal) {
         try {
-            log.info("Received call signal: {} for recipient: {}", signal.getCallType(), signal.getRecipientId());
+            log.info("Received call signal: type={}, callType={}, callerId={}, recipientId={}, callId={}",
+                signal.getType(), signal.getCallType(), signal.getCallerId(), signal.getRecipientId(), signal.getCallId());
 
             messagingTemplate.convertAndSendToUser(
                 signal.getRecipientId(),
                 "/call-signal",
                 signal
             );
+
+            log.info("Call signal {} forwarded to recipient {}", signal.getType(), signal.getRecipientId());
         } catch (Exception e) {
-            System.err.println("Failed to handle call signal: " + e.getMessage());
+            log.error("Failed to handle call signal: {}", e.getMessage(), e);
         }
     }
 }
