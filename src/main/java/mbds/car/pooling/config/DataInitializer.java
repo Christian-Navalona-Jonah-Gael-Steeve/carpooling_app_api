@@ -28,8 +28,8 @@ public class DataInitializer implements CommandLineRunner {
     private final ConversationRepository conversationRepository;
     private final ChatMessageRepository chatMessageRepository;
 
-    private static final String USER_1_UID = "8eKmKCKEWJOEqjOnGESdXEfEo132";
-    private static final String USER_2_UID = "vdIR58ZCvVWdheagow6LNIAQGQS2";
+    private static final String USER_1_UID = "f4f15a37-cd56-4e42-ba53-22dc7c530962";
+    private static final String USER_2_UID = "dd32537f-57ed-46f5-bde2-0e1bb3f9af9f";
 
     @Override
     public void run(String... args) {

@@ -27,7 +27,10 @@ public class Review {
     private User driver;
 
     @Column(nullable = false)
-    private Integer rating; // 0-5
+    private Integer rating;
+
+    @Column(columnDefinition = "TEXT")
+    private String comment;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
