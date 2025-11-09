@@ -39,6 +39,12 @@ public class TripServiceImpl {
         User driver = new User();
         driver.setUid(driverDto.getUid());
         driver.setEmail(driverDto.getEmail());
+        try {
+            driver.setFirstName(driverDto.getFirstName());
+        } catch (Exception ignored) {}
+        try {
+            driver.setLastName(driverDto.getLastName());
+        } catch (Exception ignored) {}
 
         Trip t = new Trip();
         t.setDriver(driver);
@@ -47,12 +53,25 @@ public class TripServiceImpl {
         t.setEndPoint(geom.point(dto.end().lng(), dto.end().lat()));
         t.setRoute(geom.line(dto.path()));
         t.setSeats(dto.seats() == null ? 3 : dto.seats());
-        t.setDepartureAt(dto.departureAt() == null ? OffsetDateTime.now().plusHours(1) : dto.departureAt());
+        OffsetDateTime dep = dto.departureAt();
+        if (dep == null) {
+            Integer minutes = dto.immediateInMinutes();
+            if (minutes != null && minutes > 0) {
+                dep = OffsetDateTime.now().plusMinutes(minutes);
+            } else {
+                dep = OffsetDateTime.now().plusHours(1);
+            }
+        }
+        t.setDepartureAt(dep);
 
         Trip saved = tripRepository.save(t);
 
-//        broker.convertAndSend("/topic/trips", TripResponse.from(saved));
-        return TripResponse.from(saved);
+        saved.setDriver(driver);
+        TripResponse payload = TripResponse.from(saved);
+
+        String type = dto.immediateInMinutes() != null ? "IMMEDIATE" : "NEW";
+        broker.convertAndSend("/topic/trips", new TripEvent(type, payload));
+        return payload;
     }
 
     @Transactional(readOnly = true)

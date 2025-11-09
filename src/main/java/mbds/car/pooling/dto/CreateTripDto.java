@@ -9,5 +9,6 @@ public record CreateTripDto(
         LatLngDto end,
         double[][] path,      // [[lng,lat], ...]
         Integer seats,
-        OffsetDateTime departureAt
+        OffsetDateTime departureAt,
+        Integer immediateInMinutes
 ) {}
