@@ -1,5 +1,7 @@
 package mbds.car.pooling.services.impl;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import mbds.car.pooling.dto.ChatMessageDto;
 import mbds.car.pooling.dto.ConversationListItemDto;
 import mbds.car.pooling.dto.ConversationMessageDto;

@@ -132,21 +132,20 @@ public class AuthServiceImpl implements AuthService {
                 roles.add(UserRole.PASSENGER);
             }
 
-            User user = new User(
-                    userRecord.getUid(),
-                    userRecord.getEmail(),
-                    request.getFirstName(),
-                    request.getLastName(),
-                    request.getPhoneNumber(),
-                    request.getCinNumber(),
-                    request.getGender(),
-                    justificatifUrl,
-                    request.getCity(),
-                    request.getCodePostal(),
-                    request.getAddress(),
-                    roles,
-                    AccountStatus.PENDING
-            );
+            User user = new User();
+            user.setUid(userRecord.getUid());
+            user.setEmail(userRecord.getEmail());
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setCinNumber(request.getCinNumber());
+            user.setGender(request.getGender());
+            user.setJustificatifUrl(justificatifUrl);
+            user.setCity(request.getCity());
+            user.setCodePostal(request.getCodePostal());
+            user.setAddress(request.getAddress());
+            user.setRoles(roles);
+            user.setStatus(AccountStatus.PENDING);
             userRepository.save(user);
             System.out.println("✅ Utilisateur PostgreSQL enregistré: " + user.getEmail());
 
